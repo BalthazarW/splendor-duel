@@ -1,91 +1,89 @@
 #include "card.h"
 
-namespace carte {
-    std::initializer_list<Capacite> Capacites = {
-        Capacite::associe,
-        Capacite::rien,
-        Capacite::jeton_adversaire,
-        Capacite::prendre_un_jeton,
-        Capacite::prendre_un_privilege,
-        Capacite::rejouer
+namespace card {
+    std::initializer_list<Ability> Abilities = {
+            Ability::associate,
+            Ability::nothing,
+            Ability::take_opp_token,
+            Ability::take_a_token,
+            Ability::take_a_privilege,
+            Ability::play_again
     };
 
-    string toString(const Capacite& c) {
+    string toString(const Ability& c) {
         switch (c) {
-            case Capacite::rien: return "aucune capacite";
-            case Capacite::associe: return "bonus libre";
-            case Capacite::jeton_adversaire: return "prendre 1 jeton à l'adversaire";
-            case Capacite::prendre_un_jeton: return "prendre 1 jeton sur le plateau";
-            case Capacite::prendre_un_privilege: return "prendre 1 privilege";
-            case Capacite::rejouer: return "rejouer";
-            default: throw jeton::SplendorException("Capacite inconnue");
+            case Ability::nothing: return "no ability";
+            case Ability::associate: return "free bonus";
+            case Ability::take_opp_token: return "steal a token";
+            case Ability::take_a_token: return "take a free token";
+            case Ability::take_a_privilege: return "take a privilege";
+            case Ability::play_again: return "play_again";
+            default: throw token::SplendorException("Unknown ability");
         }
     }
 
-    void toStringShort(string& capa, const Capacite c, const size_t line) {
+    void toStringShort(string& ability, const Ability c, const size_t line) {
         const string middleLine = "|                |";
         string res[5];
         size_t height;
-        if (c == Capacite::rien) {
-            res[0] = "| aucune         |";
-            res[1] = "| capacite       |";
+        if (c == Ability::nothing) {
+            res[0] = "| no             |";
+            res[1] = "| ability        |";
             height = 2;
-        } else if (c == Capacite::associe) {
-            res[0] = "| bonus libre    |";
+        } else if (c == Ability::associate) {
+            res[0] = "| free bonus     |";
             height = 1;
-        } else if (c == Capacite::jeton_adversaire) {
-            res[0] = "| prendre        |";
-            res[1] = "| un jeton a     |";
-            res[2] = "| l'adversaire   |";
+        } else if (c == Ability::take_opp_token) {
+            res[0] = "| steal a token  |";
+            res[1] = "| from your      |";
+            res[2] = "| opponent       |";
             height = 3;
-        } else if (c == Capacite::prendre_un_jeton) {
-            res[0] = "| prendre        |";
-            res[1] = "| un jeton       |";
-            res[2] = "| sur le         |";
-            res[3] = "| plateau        |";
+        } else if (c == Ability::take_a_token) {
+            res[0] = "| take a free    |";
+            res[1] = "| token from the |";
+            res[2] = "| board          |";
             height = 4;
-        } else if (c == Capacite::prendre_un_privilege) {
-            res[0] = "| prendre        |";
-            res[1] = "| un privilege   |";
+        } else if (c == Ability::take_a_privilege) {
+            res[0] = "| take           |";
+            res[1] = "| a privilege    |";
             height = 2;
-        } else if (c == Capacite::rejouer) {
-            res[0] = "| rejouer        |";
+        } else if (c == Ability::play_again) {
+            res[0] = "| play_again        |";
             height = 1;
-        } else if (c == Capacite::pas_de_carte) {
+        } else if (c == Ability::no_card) {
             res[0] = "|     \\    /     |";
             res[1] = "|      \\  /      |";
             res[2] = "|       \\/       |";
             res[3] = "|       /\\       |";
             res[4] = "|      /  \\      |";
             height = 5;
-        } else throw jeton::SplendorException("Capacite inconnue");
+        } else throw token::SplendorException("Unknown ability");
         for (size_t i = height; i < 5; i++)
             res[i] = middleLine;
-        capa = res[line];
+        ability = res[line];
     }
 
-    ostream& operator<<(ostream& f, const Capacite c) {
-        f << toString(c);
+    ostream& operator<<(ostream& f, const Ability ability) {
+        f << toString(ability);
         return f;
     }
 
-    void sauvegarderEtatPioche(const vector<CarteJoaillerie *>& pioche, const QString& fichier) {
-        QFile file(fichier);
+    void saveJewelsStack(const vector<CardJewels *>& stack, const QString& fileName) {
+        QFile file(fileName);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QXmlStreamWriter xmlWriter(&file);
             xmlWriter.setAutoFormatting(true);
 
-            // Écriture des données dans le fichier XML
             xmlWriter.writeStartDocument();
-            xmlWriter.writeStartElement("pioche");
+            xmlWriter.writeStartElement("stack");
 
-            for (const auto carte : pioche) {
-                xmlWriter.writeStartElement("carte");
+            for (const auto carte : stack) {
+                xmlWriter.writeStartElement("card");
                 if (carte == nullptr) {
-                    xmlWriter.writeAttribute("valide", nullptr);
+                    xmlWriter.writeAttribute("valid", nullptr);
                 }
                 else
-                    carte->sauvegarderEtat(xmlWriter);
+                    carte->saveState(xmlWriter);
                 xmlWriter.writeEndElement();
             }
 
@@ -94,27 +92,26 @@ namespace carte {
 
             file.close();
         } else {
-            qDebug() << "Impossible d'ouvrir le fichier pour sauvegarder l'etat de la pioche.";
+            qDebug() << "Couldn't open the file to save the stack.";
         }
     }
 
-    void sauvegarderEtatPioche(const vector<Carte *>& pioche, const QString& fichier) {
-        QFile file(fichier);
+    void saveRoyalsStack(const vector<CardRoyals *>& stack, const QString& fileName) {
+        QFile file(fileName);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QXmlStreamWriter xmlWriter(&file);
             xmlWriter.setAutoFormatting(true);
 
-            // Écriture des données dans le fichier XML
             xmlWriter.writeStartDocument();
-            xmlWriter.writeStartElement("pioche");
+            xmlWriter.writeStartElement("stack");
 
-            for (const auto carte : pioche) {
-                xmlWriter.writeStartElement("carte");
+            for (const auto carte : stack) {
+                xmlWriter.writeStartElement("card");
                 if (carte == nullptr) {
-                    xmlWriter.writeAttribute("valide", nullptr);
+                    xmlWriter.writeAttribute("valid", nullptr);
                 }
                 else
-                    carte->sauvegarderEtat(xmlWriter);
+                    carte->saveState(xmlWriter);
                 xmlWriter.writeEndElement();
             }
 
@@ -123,14 +120,14 @@ namespace carte {
 
             file.close();
         } else {
-            qDebug() << "Impossible d'ouvrir le fichier pour sauvegarder l'etat de la pioche.";
+            qDebug() << "Couldn't open the file to save the stack.";
         }
     }
 
-    vector<CarteJoaillerie *> chargerEtatPiocheJ(const QString& fichier) {
-        QFile file(fichier);
+    vector<CardJewels *> loadJewelsStack(const QString& fileName) {
+        QFile file(fileName);
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            vector<CarteJoaillerie*> nouvellePioche;
+            vector<CardJewels*> newStack;
             QXmlStreamReader xmlReader(&file);
 
             while (!xmlReader.atEnd() && !xmlReader.hasError()) {
@@ -139,22 +136,22 @@ namespace carte {
                 if (token == QXmlStreamReader::StartDocument) {
                     continue;
                 }
-                if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "carte") {
-                    nouvellePioche.push_back(CarteJoaillerie::chargerEtat(xmlReader));
+                if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "card") {
+                    newStack.push_back(CardJewels::loadState(xmlReader));
                     xmlReader.skipCurrentElement();
                 }
             }
             file.close();
-            return nouvellePioche;
+            return newStack;
         }
-        qDebug() << "Impossible d'ouvrir le fichier pour charger l'etat de la pioche.";
-        throw jeton::SplendorException("Chargement impossible");
+        qDebug() << "Couldn't open the file to load the stack.";
+        throw token::SplendorException("Loading failed");
     }
 
-    vector<Carte *> chargerEtatPioche(const QString& fichier) {
-        QFile file(fichier);
+    vector<CardRoyals *> loadRoyalsStack(const QString& fileName) {
+        QFile file(fileName);
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            vector<Carte*> nouvellePioche;
+            vector<CardRoyals*> newStack;
             QXmlStreamReader xmlReader(&file);
 
             while (!xmlReader.atEnd() && !xmlReader.hasError()) {
@@ -163,16 +160,16 @@ namespace carte {
                 if (token == QXmlStreamReader::StartDocument) {
                     continue;
                 }
-                if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "carte") {
-                    nouvellePioche.push_back(Carte::chargerEtat(xmlReader));
+                if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "card") {
+                    newStack.push_back(CardRoyals::loadState(xmlReader));
                     xmlReader.skipCurrentElement();
                 }
             }
             file.close();
-            return nouvellePioche;
+            return newStack;
         }
-        qDebug() << "Impossible d'ouvrir le fichier pour charger l'etat de la pioche.";
-        throw jeton::SplendorException("Chargement impossible");
+        qDebug() << "Couldn't open the file to load the stack.";
+        throw token::SplendorException("Loading failed");
     }
 
 }

@@ -10,70 +10,70 @@
 
 using namespace std;
 
-namespace joueur {
-    class Joueur {
-        string pseudo;
-        bool ia;
-        int niveauIA;
-        map<jeton::Couleur, size_t> jetons;
-        map<jeton::Couleur, size_t> bonus;
-        map<jeton::Couleur, size_t> nbPrestigesCouleur;
-        vector<carte::CarteJoaillerie *> cartesJoaillerie;
-        vector<carte::Carte *> cartesRoyale;
-        vector<carte::CarteJoaillerie *> reserveCartes;
+namespace player {
+    class Player {
+        string name;
+        bool ai;
+        int AILevel;
+        map<token::Color, size_t> tokens;
+        map<token::Color, size_t> bonus;
+        map<token::Color, size_t> prestigeByColor;
+        vector<card::CardJewels *> cardsJewels;
+        vector<card::CardRoyals *> cardsRoyals;
+        vector<card::CardJewels *> cardsReserve;
         size_t nbPrivileges = 0;
         size_t nbPrestiges = 0;
-        size_t nbCouronnes = 0;
-        size_t nbJetons = 0;
+        size_t nbCrowns = 0;
+        size_t nbTokens = 0;
 
     public:
-        Joueur(string p, const bool i, int n = 0): pseudo(std::move(p)), ia(i), niveauIA(n) {
+        Player(string p, const bool i, int n = 0): name(std::move(p)), ai(i), AILevel(n) {
         }
 
-        ~Joueur() = default;
+        ~Player() = default;
 
-        string getPseudo() const { return pseudo; }
-        bool isIA() const { return ia; }
-        map<jeton::Couleur, size_t> getJetons() const { return jetons; }
-        map<jeton::Couleur, size_t> getBonus() const { return bonus; }
-        vector<carte::CarteJoaillerie *> getCartesJoaillerie() const { return cartesJoaillerie; }
-        vector<carte::Carte *> getCartesRoyale() const { return cartesRoyale; }
-        vector<carte::CarteJoaillerie *> getReserve() const { return reserveCartes; }
+        string getName() const { return name; }
+        bool isAI() const { return ai; }
+        map<token::Color, size_t> getTokens() const { return tokens; }
+        map<token::Color, size_t> getBonus() const { return bonus; }
+        vector<card::CardJewels *> getCardsJewels() const { return cardsJewels; }
+        vector<card::CardRoyals *> getCardsRoyals() const { return cardsRoyals; }
+        vector<card::CardJewels *> getReserve() const { return cardsReserve; }
         size_t getNbPrivileges() const { return nbPrivileges; }
-        size_t getNbCouronnes() const { return nbCouronnes; }
+        size_t getNbCrowns() const { return nbCrowns; }
         size_t getNbPrestiges() const { return nbPrestiges; }
-        size_t getNbJetons() const { return nbJetons; }
-        int getNiveauIA() const { return niveauIA; }
+        size_t getNbTokens() const { return nbTokens; }
+        int getAILevel() const { return AILevel; }
 
-        void retirerPrivilege() { nbPrivileges--; }
-        void ajouterPrivilege() { nbPrivileges++; }
-        void retirerCouronne(const size_t nb) { nbCouronnes -= nb; }
-        void ajouterCouronne(const size_t nb) { nbCouronnes += nb; }
-        void retirerPrestiges(const size_t nb) { nbPrestiges -= nb; }
-        void ajouterPrestiges(const size_t nb) { nbPrestiges += nb; }
+        void privilegeRemove() { nbPrivileges--; }
+        void privilegeAdd() { nbPrivileges++; }
+        void crownRemove(const size_t nb) { nbCrowns -= nb; }
+        void crownAdd(const size_t nb) { nbCrowns += nb; }
+        void prestigeRemove(const size_t nb) { nbPrestiges -= nb; }
+        void prestigeAdd(const size_t nb) { nbPrestiges += nb; }
 
-        bool cumul10PointsPrestigeCouleur();
+        bool hasWonByColorPrestige();
 
-        void recupererCarte(carte::Carte* c);
+        void takeCardRoyals(card::CardRoyals* c);
 
-        void recupererCarteJoaillerie(carte::CarteJoaillerie* c);
+        void takeCardJewels(card::CardJewels* c);
 
-        void reserverCarteJoaillerie(carte::CarteJoaillerie*);
+        void reserveCardJewels(card::CardJewels* c);
 
-        void enleverDeLaReserve(const carte::CarteJoaillerie* c);
+        void removeFromReserve(const card::CardJewels* c);
 
-        void prendreJeton(const jeton::Couleur c) {
-            jetons[c] += 1;
-            nbJetons++;
+        void takeToken(const token::Color c) {
+            tokens[c] += 1;
+            nbTokens++;
         }
 
-        void enleverJeton(const jeton::Couleur c) {
-            jetons[c] -= 1;
-            nbJetons--;
+        void giveToken(const token::Color c) {
+            tokens[c] -= 1;
+            nbTokens--;
         }
 
-        void sauvegarderEtat(const QString&) const;
+        void saveState(const QString& dir) const;
 
-        static Joueur chargerEtat(const QString&);
+        static Player loadState(const QString& dir);
     };
 }

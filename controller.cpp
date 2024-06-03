@@ -5,97 +5,98 @@
 using namespace std;
 
 namespace splendor_duel {
-    Controleur* Controleur::instanceUnique = nullptr;
+    Controller *Controller::uniqueInstance = nullptr;
 
-    bool fichierMemoireExiste(const filesystem::path& name) {
-        if (FILE* file = fopen(name.string().c_str(), "r")) {
+    bool memoryFileExists(const filesystem::path &path) {
+        if (FILE *file = fopen(path.string().c_str(), "r")) {
             fclose(file);
             return true;
         }
         return false;
     }
 
-    void Controleur::partieContinuee() {
-        partie = partie::Partie::chargerEtat();
+    void Controller::continuedGame() {
+        splendorGame = game::Game::loadState();
     }
 
-    Controleur* Controleur::donneInstance() {
-        if (instanceUnique == nullptr)
-            instanceUnique = new Controleur;
-        return instanceUnique;
+    Controller *Controller::giveInstance() {
+        if (uniqueInstance == nullptr)
+            uniqueInstance = new Controller;
+        return uniqueInstance;
     }
 
-    void Controleur::libereInstance() {
-        delete instanceUnique;
-        instanceUnique = nullptr;
+    void Controller::freeInstance() {
+        delete uniqueInstance;
+        uniqueInstance = nullptr;
     }
 
-    void Controleur::start() {
-        cout << "Splendor Duel\n1: Nouvelle partie\n";
-        if (const filesystem::path memoryPath = partie::getBasePath() / "save" / "partie.xml"; fichierMemoireExiste(memoryPath))
-            cout << "2: Continuer une partie\n";
+    void Controller::start() {
+        cout << "Splendor Duel\n1: Nouvelle game\n";
+        if (const filesystem::path memoryPath = game::getBasePath() / "save" / "game.xml"; memoryFileExists(memoryPath))
+            cout << "2: Continuer une game\n";
         cout << "0: Quitter\n";
-        int choix;
-        cin >> choix;
-        if (choix == 1) {
-            nouvellePartie();
-        } else if (choix == 2) {
-            partieContinuee();
+        int choice;
+        cin >> choice;
+        if (choice == 1) {
+            newGame();
+        } else if (choice == 2) {
+            continuedGame();
         } else return;
-        partie->jouer();
-        if (partie->estFinie())
-            remove("../save/partie.xml");
+        splendorGame->play();
+        if (splendorGame->hasEnded())
+            remove("../save/game.xml");
         else
-            partie->sauvegarderEtat();
+            splendorGame->saveState();
     }
 
-    void Controleur::nouvellePartie() {
-        //demander joueurs
-        cout << "\n1: 1 joueur (contre ordinateur)\n2: 2 joueurs\n3: Ordinateur contre ordinateur\n0: Annuler\n"; {
-            int choix;
-            const vector choixValide{1, 2, 3, 0};
+    void Controller::newGame() {
+        //demander players
+        cout << "\n1: 1 Player (contre ordinateur)\n2: 2 players\n3: Ordinateur contre ordinateur\n0: Annuler\n";
+        {
+            int choice;
+            const vector validChoices{1, 2, 3, 0};
             while (true) {
-                if (cin >> choix && find(choixValide.cbegin(), choixValide.cend(), choix) != choixValide.cend())
+                if (cin >> choice && find(validChoices.cbegin(), validChoices.cend(), choice) != validChoices.cend())
                     break;
                 cout << "Choix invalide, reessayez :\n";
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
-            if (choix == 0) {
+            if (choice == 0) {
                 start();
                 return;
             }
-            int choixIA = 0;
-            if (choix != 2) {
+            int choiceAI = 0;
+            if (choice != 2) {
                 cout << "\nNiveau de l'IA : \n1: niveau 1 (aleatoire)\n0: Annuler\n";
-                const vector choixIAValide{1};
+                const vector validChoicesAI{1};
                 while (true) {
-                    if (cin >> choixIA && find(choixValide.begin(), choixValide.end(), choixIA) != choixValide.end())
+                    if (cin >> choiceAI && find(validChoicesAI.begin(), validChoicesAI.end(), choiceAI) != validChoicesAI.end())
                         break;
                     cout << "Choix invalide, reessayez :\n";
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
-                if (choixIA == 0) {
-                    nouvellePartie();
+                if (choiceAI == 0) {
+                    newGame();
                     return;
                 }
             }
-            string j1 = "Bot Alpha";
-            string j2 = "Bot Beta";
-            joueur::Joueur joueur1(j1, true, choixIA);
-            joueur::Joueur joueur2(j2, true, choixIA);
-            if (choix != 3) {
-                cout << "Nom du Joueur 1 (sans espaces) :";
-                cin >> j1;
-                joueur1 = joueur::Joueur(j1, false);
+            string namePlayer1 = "Bot Alpha";
+            string namePlayer2 = "Bot Beta";
+            player::Player player1(namePlayer1, true, choiceAI);
+            player::Player player2(namePlayer2, true, choiceAI);
+            if (choice != 3) {
+                cout << "Nom du Player 1 (sans espaces) :";
+                cin >> namePlayer1;
+                player1 = player::Player(namePlayer1, false);
             }
-            if (choix == 2) {
-                cout << "Nom du Joueur 2 (sans espaces) :";
-                cin >> j2;
-                joueur2 = joueur::Joueur(j2, false);
+            if (choice == 2) {
+                cout << "Nom du Player 2 (sans espaces) :";
+                cin >> namePlayer2;
+                player2 = player::Player(namePlayer2, false);
             }
-            partie = new partie::Partie(joueur1, joueur2, true);
+            splendorGame = new game::Game(player1, player2, true);
         } // entre accolades pour permettre de free toutes les variables locales
         // vu que la fonction se termine seulement lorsqu'on ferme le jeu
     }

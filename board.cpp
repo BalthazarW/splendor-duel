@@ -3,36 +3,36 @@
 #include <ctime>
 #include <algorithm>
 
-namespace plateau {
-    void Plateau::remplirPlateau(Sachet& s) {
-        size_t nbJ = s.getNbJetons();
-        for (size_t i = 0; i < nbMax && nbJ != 0; i++) {
-            if (jetons[i] == nullptr) {
-                jetons[i] = s.piocherJetonDansSachet();
-                nbJ--;
-                nbJetons++;
-                if (jetons[i]->isGold()) nbJetonsOr++;
+namespace board {
+    void Board::fillBoard(Bag &bag) {
+        size_t nbTokensInBag = bag.getNbTokens();
+        for (size_t i = 0; i < nbMax && nbTokensInBag != 0; i++) {
+            if (tokens[i] == nullptr) {
+                tokens[i] = bag.drawTokenFromBag();
+                nbTokensInBag--;
+                nbTokens++;
+                if (tokens[i]->isGold()) nbGoldTokens++;
             }
         }
     }
 
-    void Plateau::retirerJetons(const jeton::Jeton& j) {
+    void Board::removeToken(const token::Token &token) {
         size_t i = 0;
-        while (i < nbMax && jetons[i] != &j) i++;
-        if (i == nbMax) throw jeton::SplendorException("Pas de jeton de cette couleur sur le plateau");
-        if (j.isGold()) nbJetonsOr--;
-        jetons[i] = nullptr;
-        nbJetons--;
+        while (i < nbMax && tokens[i] != &token) i++;
+        if (i == nbMax) throw token::SplendorException("No token of this color on the board");
+        if (token.isGold()) nbGoldTokens--;
+        tokens[i] = nullptr;
+        nbTokens--;
     }
 
-    void Plateau::afficherPlateau() const {
+    void Board::displayBoard() const {
         for (size_t i = 0; i < 5; i++) {
             cout << i + 1 << "  ";
             for (size_t j = 0; j < 5; j++) {
-                if (jetons[position[i][j]] == nullptr) {
+                if (tokens[position[i][j]] == nullptr) {
                     cout << "# ";
                 } else {
-                    cout << *jetons[position[i][j]] << " ";
+                    cout << *tokens[position[i][j]] << " ";
                 }
             }
             cout << "\n";
@@ -43,46 +43,46 @@ namespace plateau {
         cout << "\n";
     }
 
-    Sachet::Sachet() {
+    Bag::Bag() {
         nb = 25;
         for (size_t i = 0; i < 5; i++) {
             for (size_t j = 0; j < 4; j++) {
-                jetons.push_back(new const jeton::Jeton(static_cast<jeton::Couleur>(i)));
+                tokens.push_back(new const token::Token(static_cast<token::Color>(i)));
             }
         }
         for (size_t i = 0; i < 2; i++) {
-            jetons.push_back(new const jeton::Jeton(jeton::Couleur::gold));
-            jetons.push_back(new const jeton::Jeton(jeton::Couleur::perle));
+            tokens.push_back(new const token::Token(token::Color::gold));
+            tokens.push_back(new const token::Token(token::Color::pearl));
         }
-        jetons.push_back(new const jeton::Jeton(jeton::Couleur::gold));
-        melangeSachet();
+        tokens.push_back(new const token::Token(token::Color::gold));
+        shuffleBag();
     }
 
-    Sachet::~Sachet() {
+    Bag::~Bag() {
         for (size_t i = 0; i < 25; i++) {
-            delete jetons[i];
+            delete tokens[i];
         }
     }
 
-    void Sachet::melangeSachet() {
-        random_device dev;
-        mt19937 rng(dev());
-        shuffle(jetons.begin(), jetons.end(), rng);
+    void Bag::shuffleBag() {
+        random_device randomDevice;
+        mt19937 rng(randomDevice());
+        shuffle(tokens.begin(), tokens.end(), rng);
     }
 
-    const jeton::Jeton* Sachet::piocherJetonDansSachet() {
-        if (nb == 0) throw jeton::SplendorException("Pas assez de jetons pour piocher");
-        return jetons[--nb];
+    const token::Token *Bag::drawTokenFromBag() {
+        if (nb == 0) throw token::SplendorException("Not enough tokens to draw");
+        return tokens[--nb];
     }
 
-    void Sachet::remettreJetonDansSachet(const jeton::Couleur& j) {
-        if (nb == 25) throw jeton::SplendorException("Le sachet est deja plein");
+    void Bag::returnTokenToBag(const token::Color &color) {
+        if (nb == 25) throw token::SplendorException("The bag is already full");
         size_t i = nb;
-        while (i < 25 && jetons[i]->getCouleur() != j) i++;
-        if (i == 25) throw jeton::SplendorException("Impossible d'ajouter cette couleur au sachet");
-        const jeton::Jeton* tmp = jetons[i];
-        jetons[i] = jetons[nb];
-        jetons[nb] = tmp;
+        while (i < 25 && tokens[i]->getColor() != color) i++;
+        if (i == 25) throw token::SplendorException("Too many tokens of this color in the bag");
+        const token::Token *tmp = tokens[i];
+        tokens[i] = tokens[nb];
+        tokens[nb] = tmp;
         nb++;
     }
 }

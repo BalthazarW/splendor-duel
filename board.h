@@ -9,43 +9,41 @@
 
 using namespace std;
 
-namespace plateau {
-    class Sachet {
-        vector<const jeton::Jeton *> jetons;
+namespace board {
+    class Bag {
+        vector<const token::Token *> tokens;
         size_t nb;
 
     public:
-        Sachet();
+        Bag();
 
-        ~Sachet();
+        ~Bag();
 
-        size_t getNbJetons() const { return nb; }
+        size_t getNbTokens() const { return nb; }
 
-        void melangeSachet();
+        void shuffleBag();
 
-        const jeton::Jeton* piocherJetonDansSachet();
+        const token::Token *drawTokenFromBag();
 
-        void remettreJetonDansSachet(const jeton::Couleur&);
+        void returnTokenToBag(const token::Color &);
 
-        void sauvegarderEtat(const QString& nomFichier) const {
-            QFile file(nomFichier);
+        void saveState(const QString &fileName) const {
+            QFile file(fileName);
             if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
                 QXmlStreamWriter xmlWriter(&file);
                 xmlWriter.setAutoFormatting(true);
 
-                // Écriture des données dans le fichier XML
                 xmlWriter.writeStartDocument();
-                xmlWriter.writeStartElement("sachet");
+                xmlWriter.writeStartElement("bag");
 
-                xmlWriter.writeAttribute("nb_jetons", QString::number(nb));
+                xmlWriter.writeAttribute("nb_tokens", QString::number(nb));
 
-                // Exemple : sauvegarde des jetons présents dans le sachet
-                for (const jeton::Jeton* jeton: jetons) {
-                    xmlWriter.writeStartElement("jeton");
-                    int couleur = -1;
-                    if (jeton)
-                        couleur = static_cast<int>(jeton->getCouleur());
-                    xmlWriter.writeAttribute("valeur", QString::number(couleur));
+                for (const token::Token *pToken: tokens) {
+                    xmlWriter.writeStartElement("token");
+                    int color = -1;
+                    if (pToken)
+                        color = static_cast<int>(pToken->getColor());
+                    xmlWriter.writeAttribute("value", QString::number(color));
                     xmlWriter.writeEndElement();
                 }
 
@@ -54,15 +52,15 @@ namespace plateau {
 
                 file.close();
             } else {
-                qDebug() << "Impossible d'ouvrir le fichier pour sauvegarder l'etat du sachet.";
+                qDebug() << "Couldn't open the file to save the bag.";
             }
         }
 
-        void chargerEtat(const QString& nomFichier) {
-            QFile file(nomFichier);
+        void loadState(const QString &fileName) {
+            QFile file(fileName);
             if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 QXmlStreamReader xmlReader(&file);
-                jetons.clear();
+                tokens.clear();
 
                 while (!xmlReader.atEnd() && !xmlReader.hasError()) {
                     const QXmlStreamReader::TokenType token = xmlReader.readNext();
@@ -70,76 +68,79 @@ namespace plateau {
                     if (token == QXmlStreamReader::StartDocument) {
                         continue;
                     }
-                    if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "sachet")
-                        nb = xmlReader.attributes().value("nb_jetons").toInt();
+                    if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "bag")
+                        nb = xmlReader.attributes().value("nb_tokens").toInt();
 
-                    if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "jeton") {
-                        if (auto valeurJeton = xmlReader.attributes().value("valeur").toInt(); valeurJeton != -1) {
-                            jetons.push_back(new jeton::Jeton(static_cast<jeton::Couleur>(valeurJeton)));
+                    if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "token") {
+                        if (auto tokenValue = xmlReader.attributes().value("value").toInt(); tokenValue != -1) {
+                            tokens.push_back(new token::Token(static_cast<token::Color>(tokenValue)));
                         } else
-                            jetons.push_back(nullptr);
+                            tokens.push_back(nullptr);
                         xmlReader.skipCurrentElement();
                     }
                 }
                 file.close();
             } else {
-                qDebug() << "Impossible d'ouvrir le fichier pour charger l'etat du sachet.";
+                qDebug() << "Couldn't open the file to save the bag.";
             }
         }
     };
 
-    class Plateau {
-        vector<const jeton::Jeton *> jetons;
-        size_t nbJetons;
-        size_t nbJetonsOr;
+    class Board {
+        vector<const token::Token *> tokens;
+        size_t nbTokens;
+        size_t nbGoldTokens;
         const size_t nbMax;
         const size_t position[5][5] = {
-            {20, 21, 22, 23, 24}, {19, 6, 7, 8, 9}, {18, 5, 0, 1, 10}, {17, 4, 3, 2, 11}, {16, 15, 14, 13, 12}
+                {20, 21, 22, 23, 24},
+                {19, 6,  7,  8,  9},
+                {18, 5,  0,  1,  10},
+                {17, 4,  3,  2,  11},
+                {16, 15, 14, 13, 12}
         };
 
     public:
-        Plateau() : nbJetonsOr(0), nbJetons(0), nbMax(25) {
+        Board() : nbGoldTokens(0), nbTokens(0), nbMax(25) {
             for (size_t i = 0; i < nbMax; i++) {
-                jetons.emplace_back(nullptr);
+                tokens.emplace_back(nullptr);
             }
         }
 
-        ~Plateau() = default;
+        ~Board() = default;
 
-        void remplirPlateau(Sachet& s);
+        void fillBoard(Bag &bag);
 
-        size_t getNbJetons() { return nbJetons; }
+        size_t getNbTokens() const { return nbTokens; }
 
-        size_t getNbJetonsOr() { return nbJetonsOr; }
+        size_t getNbGoldTokens() const { return nbGoldTokens; }
 
-        void setNbJetonsOr(size_t i) { nbJetonsOr = i;}
+        void setNbGoldTokens(size_t i) { nbGoldTokens = i; }
 
-        void retirerJetons(const jeton::Jeton& j);
+        void removeToken(const token::Token &token);
 
-        void retirerJetonsOr();
+        void removeGoldToken();
 
-        void afficherPlateau() const;
+        void displayBoard() const;
 
-        vector<const jeton::Jeton *> getJetons() const { return jetons; }
+        vector<const token::Token *> getTokens() const { return tokens; }
+
         size_t getPosition(size_t i, size_t j) const { return position[i][j]; }
 
-        void sauvegarderEtat(const QString& nomFichier) const {
-            QFile file(nomFichier);
+        void saveState(const QString &fileName) const {
+            QFile file(fileName);
             if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
                 QXmlStreamWriter xmlWriter(&file);
                 xmlWriter.setAutoFormatting(true);
 
-                // Écriture des données dans le fichier XML
                 xmlWriter.writeStartDocument();
-                xmlWriter.writeStartElement("plateau");
+                xmlWriter.writeStartElement("board");
 
-                // Exemple : sauvegarde des jetons présents sur le plateau
-                for (const jeton::Jeton* jeton: jetons) {
-                    xmlWriter.writeStartElement("jeton");
-                    int couleur = -1;
-                    if (jeton)
-                        couleur = static_cast<int>(jeton->getCouleur());
-                    xmlWriter.writeAttribute("valeur", QString::number(couleur));
+                for (const token::Token *pToken: tokens) {
+                    xmlWriter.writeStartElement("token");
+                    int color = -1;
+                    if (pToken)
+                        color = static_cast<int>(pToken->getColor());
+                    xmlWriter.writeAttribute("value", QString::number(color));
                     xmlWriter.writeEndElement();
                 }
 
@@ -148,15 +149,15 @@ namespace plateau {
 
                 file.close();
             } else {
-                qDebug() << "Impossible d'ouvrir le fichier pour sauvegarder l'etat du plateau.";
+                qDebug() << "Couldn't open the file to save the board.";
             }
         }
 
-        void chargerEtat(const QString& nomFichier) {
-            QFile file(nomFichier);
+        void loadState(const QString &fileName) {
+            QFile file(fileName);
             if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 QXmlStreamReader xmlReader(&file);
-                jetons.clear();
+                tokens.clear();
 
                 while (!xmlReader.atEnd() && !xmlReader.hasError()) {
                     QXmlStreamReader::TokenType token = xmlReader.readNext();
@@ -164,18 +165,18 @@ namespace plateau {
                     if (token == QXmlStreamReader::StartDocument) {
                         continue;
                     }
-                    if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "jeton") {
-                        if (auto valeurJeton = xmlReader.attributes().value("valeur").toInt(); valeurJeton != -1) {
-                            jetons.push_back(new jeton::Jeton(static_cast<jeton::Couleur>(valeurJeton)));
-                            nbJetons++;
+                    if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "token") {
+                        if (auto tokenValue = xmlReader.attributes().value("value").toInt(); tokenValue != -1) {
+                            tokens.push_back(new token::Token(static_cast<token::Color>(tokenValue)));
+                            nbTokens++;
                         } else
-                            jetons.push_back(nullptr);
+                            tokens.push_back(nullptr);
                         xmlReader.skipCurrentElement();
                     }
                 }
                 file.close();
             } else {
-                qDebug() << "Impossible d'ouvrir le fichier pour charger l'etat du plateau.";
+                qDebug() << "Couldn't open the file to save the board.";
             }
         }
     };

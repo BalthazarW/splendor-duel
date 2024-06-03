@@ -5,10 +5,10 @@
 #include "game.h"
 #include "token.h"
 
-using namespace jeton;
-using namespace carte;
+using namespace token;
+using namespace card;
 
-namespace partie {
+namespace game {
     filesystem::path getBasePath() {
         const auto assetsPath1 = filesystem::absolute("assets");
         const auto assetsPath2 = filesystem::absolute("../assets");
@@ -17,20 +17,20 @@ namespace partie {
         if (const vector path1 = {assetsPath1, savePath1}; all_of(
                 path1.cbegin(),
                 path1.cend(),
-                [](const filesystem::path& path) { return exists(path); })
-        )
+                [](const filesystem::path &path) { return exists(path); })
+                )
             return assetsPath1.parent_path();
         if (const vector path2 = {assetsPath2, savePath2}; all_of(
                 path2.cbegin(),
                 path2.cend(),
-                [](const filesystem::path& path) { return exists(path); })
-        )
+                [](const filesystem::path &path) { return exists(path); })
+                )
             return assetsPath2.parent_path();
         throw SplendorException("Couldn't find the path for the game's assets or the save path");
     }
 
-    void printSpacing(const size_t base, const bool pyramide) {
-        if (!pyramide)
+    void printSpacing(const size_t base, const bool pyramid) {
+        if (!pyramid)
             return;
         if (base == 3)
             cout << "                   ";
@@ -38,22 +38,22 @@ namespace partie {
             cout << "         ";
     }
 
-    void afficherLigneCartes(const vector<CarteJoaillerie *>& listeCartes, const size_t base, const bool pyramide) {
+    void printCardsLine(const vector<card::CardJewels *> &cardsList, size_t base, bool pyramid) {
         const string bottomLine = "|________________|";
-        printSpacing(base, pyramide);
+        printSpacing(base, pyramid);
         for (int i = 0; i < min(base, size_t(6)); i++) {
             cout << " ________________  ";
         }
         cout << "\n";
-        printSpacing(base, pyramide);
+        printSpacing(base, pyramid);
         for (int i = 0; i < min(base, size_t(6)); i++) {
-            if (listeCartes[i] != nullptr) {
-                cout << "| P:" << listeCartes[i]->getPrestige() << " " << "C:" << listeCartes[i]->getCouronnes()
-                        << "    ";
-                if (listeCartes[i]->getNbReduc() != 0) {
-                    cout << listeCartes[i]->getNbReduc() << "x";
-                    if (listeCartes[i]->getCouleurReduc() != Couleur::perle)
-                        cout << listeCartes[i]->getCouleurReduc();
+            if (cardsList[i] != nullptr) {
+                cout << "| P:" << cardsList[i]->getPrestige() << " " << "C:" << cardsList[i]->getCrowns()
+                     << "    ";
+                if (cardsList[i]->getNbDiscount() != 0) {
+                    cout << cardsList[i]->getNbDiscount() << "x";
+                    if (cardsList[i]->getDiscountColor() != Color::pearl)
+                        cout << cardsList[i]->getDiscountColor();
                     else
                         cout << "?";
                 } else cout << "   ";
@@ -61,24 +61,24 @@ namespace partie {
             } else cout << "|                | ";
         }
         cout << "\n";
-        printSpacing(base, pyramide);
+        printSpacing(base, pyramid);
         for (size_t line = 0; line < 5; line++) {
             for (int i = 0; i < min(base, size_t(6)); i++) {
-                string capacite;
-                if (listeCartes[i] != nullptr)
-                    toStringShort(capacite, listeCartes[i]->getCapacite(), line);
-                else toStringShort(capacite, Capacite::pas_de_carte, line);
-                cout << capacite << " ";
+                string ability;
+                if (cardsList[i] != nullptr)
+                    toStringShort(ability, cardsList[i]->getAbility(), line);
+                else toStringShort(ability, Ability::no_card, line);
+                cout << ability << " ";
             }
             cout << "\n";
-            printSpacing(base, pyramide);
+            printSpacing(base, pyramid);
         }
         for (int i = 0; i < min(base, size_t(6)); i++) {
-            if (listeCartes[i] != nullptr && listeCartes[i]->getPrix() != nullptr) {
+            if (cardsList[i] != nullptr && cardsList[i]->getPrice() != nullptr) {
                 cout << "| ";
                 size_t countPrice = 0;
-                for (const auto [couleur, nb]: *listeCartes[i]-> getPrix()) {
-                    cout << nb << couleur << " ";
+                for (const auto [color, nb]: *cardsList[i]->getPrice()) {
+                    cout << nb << color << " ";
                     countPrice++;
                 }
                 for (auto j = countPrice; j < 4; j++)
@@ -87,72 +87,84 @@ namespace partie {
             } else cout << "|     /    \\     | ";
         }
         cout << "\n";
-        printSpacing(base, pyramide);
+        printSpacing(base, pyramid);
         for (int i = 0; i < min(base, size_t(6)); i++) {
             cout << bottomLine << " ";
         }
         cout << "\n";
         if (base > 6)
-            afficherLigneCartes(vector(listeCartes.begin() + 6, listeCartes.end()), base - 6, pyramide);
+            printCardsLine(vector(cardsList.begin() + 6, cardsList.end()), base - 6, pyramid);
     }
 
-    void quelleCouleur(const vector<CarteJoaillerie *>& container, const size_t index) {
+    void whichColor(const vector<CardJewels *> &container, const size_t index) {
 
-        char rep = ' ';
-        cout << "Choisissez la couleur de votre bonus. Exemple : pour du rouge R. Attention W pour Blanc\n";
-        cin >> rep;
-        switch (rep) {
-            case 'B': container[index]->setCouleurReduc(Couleur::bleu);
+        char answer = ' ';
+        cout << "Choose the color of your bonus. Example : R for red. Reminder: N for black\n";
+        cin >> answer;
+        switch (answer) {
+            case 'B':
+                container[index]->setDiscountColor(Color::blue);
                 break;
-            case 'W': container[index]->setCouleurReduc(Couleur::blanc);
+            case 'W':
+                container[index]->setDiscountColor(Color::white);
                 break;
-            case 'V': container[index]->setCouleurReduc(Couleur::vert);
+            case 'V':
+                container[index]->setDiscountColor(Color::green);
                 break;
-            case 'N': container[index]->setCouleurReduc(Couleur::noir);
+            case 'N':
+                container[index]->setDiscountColor(Color::black);
                 break;
-            case 'R': container[index]->setCouleurReduc(Couleur::rouge);
+            case 'R':
+                container[index]->setDiscountColor(Color::red);
                 break;
-            default: break;
+            default:
+                break;
         }
     }
 
-    void quelleCouleurIA(const vector<CarteJoaillerie *>& container, const size_t index) {
-       vector<char> choixValides = {'B', 'W', 'V', 'N', 'R'};
+    void whichColorAI(const vector<CardJewels *> &container, const size_t index) {
+        vector<char> validChoices = {'B', 'W', 'V', 'N', 'R'};
         random_device dev;
         mt19937 rng(dev());
-        uniform_int_distribution<> dis(0, choixValides.size()-1);
-       char rep = choixValides[dis(rng)];
-        switch (rep) {
-            case 'B': container[index]->setCouleurReduc(Couleur::bleu);
+        uniform_int_distribution<> dis(0, validChoices.size() - 1);
+        char answer = validChoices[dis(rng)];
+        switch (answer) {
+            case 'B':
+                container[index]->setDiscountColor(Color::blue);
                 break;
-            case 'W': container[index]->setCouleurReduc(Couleur::blanc);
+            case 'W':
+                container[index]->setDiscountColor(Color::white);
                 break;
-            case 'V': container[index]->setCouleurReduc(Couleur::vert);
+            case 'V':
+                container[index]->setDiscountColor(Color::green);
                 break;
-            case 'N': container[index]->setCouleurReduc(Couleur::noir);
+            case 'N':
+                container[index]->setDiscountColor(Color::black);
                 break;
-            case 'R': container[index]->setCouleurReduc(Couleur::rouge);
+            case 'R':
+                container[index]->setDiscountColor(Color::red);
                 break;
-            default: break;
+            default:
+                break;
         }
     }
 
-    void Partie::afficherCartesRoyale(const vector<Carte*>& listeCartes) const {
+    void Game::printRoyals(const vector<card::CardRoyals *> &cardsList) {
         const string bottomLine = "|________________|";
-        const size_t base = listeCartes.size();
+        const size_t base = cardsList.size();
         for (int i = 0; i < base; i++) {
             cout << " ________________  ";
         }
         cout << "\n";
         for (int i = 0; i < base; i++) {
-            cout << "| P:" << listeCartes[i]->getPrestige() << "            | ";
+            cout << "| P:" << cardsList[i]->getPrestige() << "            | ";
         }
         cout << "\n";
         for (size_t line = 0; line < 5; line++) {
             for (int i = 0; i < base; i++) {
-                string capacite;
-                toStringShort(capacite, listeCartes[i]->getCapacite(), line);
-                cout << capacite << " ";
+                string ability;
+                toStringShort(ability, cardsList[i]->getAbility(), line);
+                cout << ability << " ";
             }
             cout << "\n";
         }
@@ -166,9 +178,9 @@ namespace partie {
         cout << "\n";
     }
 
-    void Partie::instancierJoaillerie(const string& filename) {
+    void Game::generateJewels(const string &filename) {
         string line_info;
-        int niveau, prestige, capacite, couronnes, couleur, nbReduc, bleu, blanc, vert, noir, rouge, perle;
+        int level, prestige, ability, crowns, color, nbDiscount, blue, white, green, black, red, pearl;
         ifstream infile(filename);
         getline(infile, line_info);
         size_t lineNb = 1;
@@ -177,52 +189,52 @@ namespace partie {
         istringstream line_stream;
         while (getline(infile, line_info)) {
             line_stream.str(line_info);
-            line_stream >> niveau >> prestige >> capacite >> couronnes >> couleur >> nbReduc >> bleu >> blanc >> vert >>
-                    noir >> rouge >> perle;
-            map<Couleur, size_t> prix;
-            int couleurs[] = {bleu, blanc, vert, noir, rouge, perle};
+            line_stream >> level >> prestige >> ability >> crowns >> color >> nbDiscount >> blue >> white >> green >>
+                        black >> red >> pearl;
+            map<Color, size_t> price;
+            int colors[] = {blue, white, green, black, red, pearl};
             for (int i = 0; i < 6; i++) {
-                if (couleurs[i] != 0)
-                    prix[static_cast<Couleur>(i)] = couleurs[i];
+                if (colors[i] != 0)
+                    price[static_cast<Color>(i)] = colors[i];
             }
             char imageFilename[20];
             char cardLevelPath[20];
-            sprintf(cardLevelPath, "cards_lvl%d", niveau);
-            if (niveau == 1) {
-                sprintf(imageFilename, "carte-%llu.png", lineNb);
+            sprintf(cardLevelPath, "cards_lvl%d", level);
+            if (level == 1) {
+                sprintf(imageFilename, "card-%llu.png", lineNb);
                 auto imagePath = assetsPath / cardLevelPath / imageFilename;
-                cartesNv1.push_back(new CarteJoaillerie(
-                    prestige,
-                    new map(prix),
-                    static_cast<Capacite>(capacite),
-                    couronnes,
-                    static_cast<Couleur>(couleur),
-                    nbReduc,
-                    imagePath.string()
+                cardsLvl1.push_back(new CardJewels(
+                        prestige,
+                        new map(price),
+                        static_cast<Ability>(ability),
+                        crowns,
+                        static_cast<Color>(color),
+                        nbDiscount,
+                        imagePath.string()
                 ));
-            } else if (niveau == 2) {
-                sprintf(imageFilename, "carte-%llu.png", lineNb - cartesNv1.size());
+            } else if (level == 2) {
+                sprintf(imageFilename, "card-%llu.png", lineNb - cardsLvl1.size());
                 auto imagePath = assetsPath / cardLevelPath / imageFilename;
-                cartesNv2.push_back(new CarteJoaillerie(
-                    prestige,
-                    new map(prix),
-                    static_cast<Capacite>(capacite),
-                    couronnes,
-                    static_cast<Couleur>(couleur),
-                    nbReduc,
-                    imagePath.string()
+                cardsLvl2.push_back(new CardJewels(
+                        prestige,
+                        new map(price),
+                        static_cast<Ability>(ability),
+                        crowns,
+                        static_cast<Color>(color),
+                        nbDiscount,
+                        imagePath.string()
                 ));
             } else {
-                sprintf(imageFilename, "carte-%llu.png", lineNb - cartesNv1.size() - cartesNv2.size());
+                sprintf(imageFilename, "card-%llu.png", lineNb - cardsLvl1.size() - cardsLvl2.size());
                 auto imagePath = assetsPath / cardLevelPath / imageFilename;
-                cartesNv3.push_back(new CarteJoaillerie(
-                    prestige,
-                    new map(prix),
-                    static_cast<Capacite>(capacite),
-                    couronnes,
-                    static_cast<Couleur>(couleur),
-                    nbReduc,
-                    imagePath.string()
+                cardsLvl3.push_back(new CardJewels(
+                        prestige,
+                        new map(price),
+                        static_cast<Ability>(ability),
+                        crowns,
+                        static_cast<Color>(color),
+                        nbDiscount,
+                        imagePath.string()
                 ));
             }
             lineNb++;
@@ -231,14 +243,14 @@ namespace partie {
         infile.close();
         random_device dev;
         mt19937 rng(dev());
-        shuffle(cartesNv1.begin(), cartesNv1.end(), rng);
-        shuffle(cartesNv2.begin(), cartesNv2.end(), rng);
-        shuffle(cartesNv3.begin(), cartesNv3.end(), rng);
+        shuffle(cardsLvl1.begin(), cardsLvl1.end(), rng);
+        shuffle(cardsLvl2.begin(), cardsLvl2.end(), rng);
+        shuffle(cardsLvl3.begin(), cardsLvl3.end(), rng);
     }
 
-    void Partie::instancierRoyale(const string& filename) {
+    void Game::generateRoyals(const string &filename) {
         string line_info;
-        int prestige, capacite;
+        int prestige, ability;
         ifstream infile(filename);
         getline(infile, line_info);
         size_t lineNb = 1;
@@ -247,313 +259,313 @@ namespace partie {
         istringstream line_stream;
         while (getline(infile, line_info)) {
             char imageFilename[20];
-            sprintf(imageFilename, "carte-%llu.png", lineNb);
+            sprintf(imageFilename, "card-%llu.png", lineNb);
             auto imagePath = assetsPath / "royal_cards" / imageFilename;
             line_stream.str(line_info);
-            line_stream >> prestige >> capacite;
-            cartesRoyales.push_back(new Carte(prestige, static_cast<Capacite>(capacite), imagePath.string()));
+            line_stream >> prestige >> ability;
+            cardsRoyals.push_back(new CardRoyals(prestige, static_cast<Ability>(ability), imagePath.string()));
             line_stream.clear();
             lineNb++;
         }
         infile.close();
     }
 
-    void Partie::jouer() {
-        bool aGagne = false;
-        while (!aGagne) {
-          cout << "Au tour de " << auTourDe->getPseudo() << "\n";
-            afficherPyramide();
-            cout << "Plateau :\n";
-            plateau.afficherPlateau();
-            cout << "\nCartes achetees par le joueur :\n";
-            if (!auTourDe->getCartesJoaillerie().empty())
-                afficherLigneCartes(auTourDe->getCartesJoaillerie(), auTourDe->getCartesJoaillerie().size(), false);
-            cout << "Carte(s) royale(s) du joueur :\n";
-            if (!auTourDe->getCartesRoyale().empty())
-                afficherCartesRoyale(auTourDe->getCartesRoyale());
-            cout << "Reserve du joueur :\n";
-            if (!auTourDe->getReserve().empty())
-                afficherLigneCartes(auTourDe->getReserve(), auTourDe->getReserve().size(), false);
+    void Game::play() {
+        bool hasWon = false;
+        while (!hasWon) {
+            cout << "Au tour de " << activePlayer->getName() << "\n";
+            printPyramid();
+            cout << "Board :\n";
+            board.displayBoard();
+            cout << "\nCartes achetees par le Player :\n";
+            if (!activePlayer->getCardsJewels().empty())
+                printCardsLine(activePlayer->getCardsJewels(), activePlayer->getCardsJewels().size(), false);
+            cout << "CardRoyals(s) royale(s) du Player :\n";
+            if (!activePlayer->getCardsRoyals().empty())
+                printRoyals(activePlayer->getCardsRoyals());
+            cout << "Reserve du Player :\n";
+            if (!activePlayer->getReserve().empty())
+                printCardsLine(activePlayer->getReserve(), activePlayer->getReserve().size(), false);
             cout << "Jetons : ";
-            for (const auto [couleur, nb]: (auTourDe->getJetons())) {
+            for (const auto [couleur, nb]: (activePlayer->getTokens())) {
                 cout << nb << couleur << " ";
             }
-            cout << "\nNombre de Privilege : " << auTourDe->getNbPrivileges() << "\n";
+            cout << "\nNombre de Privilege : " << activePlayer->getNbPrivileges() << "\n";
 
-            if (!auTourDe->isIA()) {
+            if (!activePlayer->isAI()) {
                 bool continuer = true;
                 bool quitter = false;
-                while (actionsOptionnellesAccomplies < 2 && continuer) {
-                    tie(continuer, quitter) = actionOptionnelle();
+                while (optionalActionsDone < 2 && continuer) {
+                    tie(continuer, quitter) = actionOptional();
                     if (quitter && !continuer)
                         return;
                     if (!quitter || !continuer)
-                        actionsOptionnellesAccomplies++;
+                        optionalActionsDone++;
                 }
                 continuer = false;
-                continuer = actionObligatoire();
+                continuer = actionMandatory();
                 if (!continuer) {
-                    return; // pour ne pas changer 2 fois de joueur
+                    return; // pour ne pas changer 2 fois de Player
                 }
-                actionsOptionnellesAccomplies = 0;
-            } else if (auTourDe->getNiveauIA() == 1) {
+                optionalActionsDone = 0;
+            } else if (activePlayer->getAILevel() == 1) {
                 bool continuer = true;
                 bool quitter = false;
                 size_t k = 0;
-                while (actionsOptionnellesAccomplies < 2 && continuer) {
+                while (optionalActionsDone < 2 && continuer) {
                     k++;
-                    tie(continuer, quitter) = actionOptionnelleIA();
+                    tie(continuer, quitter) = actionOptionalAI();
                     if (quitter && !continuer)
                         return;
                     if (!quitter || !continuer)
-                        actionsOptionnellesAccomplies++;
+                        optionalActionsDone++;
                 }
                 continuer = false;
-                continuer = actionObligatoireIA();
+                continuer = actionMandatoryAI();
                 if (!continuer) {
-                    return; // pour ne pas changer 2 fois de joueur
+                    return; // pour ne pas changer 2 fois de Player
                 }
-                actionsOptionnellesAccomplies = 0;
+                optionalActionsDone = 0;
             }
-            aGagne = verifFinTour();
-            if (!aGagne)
-                changeJoueur();
+            hasWon = endOfTurnChecks();
+            if (!hasWon)
+                changePlayer();
             for (int i = 0; i < 10; i++)
                 cout << "\n";
         }
-        fini = true;
-        cout << "Le joueur " << auTourDe->getPseudo() << " a gagne ! Bien joue !";
+        gameEnded = true;
+        cout << "Le Player " << activePlayer->getName() << " a gagne ! Bien joue !";
     }
 
-    tuple<bool, bool> Partie::actionOptionnelle() {
-        int choix = 0;
-        vector choixValide{0, 3};
+    tuple<bool, bool> Game::actionOptional() {
+        int choice = 0;
+        vector validChoices{0, 3};
         cout << "Actions possibles:\n";
-        if (auTourDe->getNbPrivileges() > 0) {
+        if (activePlayer->getNbPrivileges() > 0) {
             cout << "1 : Utiliser un ou plusieurs privileges\n";
-            choixValide.push_back(1);
+            validChoices.push_back(1);
         }
-        if (sachet.getNbJetons() > 0) {
-            cout << "2 : Remplir le plateau\n";
-            choixValide.push_back(2);
+        if (bag.getNbTokens() > 0) {
+            cout << "2 : Remplir le board\n";
+            validChoices.push_back(2);
         }
         cout << "3 : Accomplir une action obligatoire\n0 : Quitter\n";
         while (true) {
-            if (cin >> choix && find(choixValide.cbegin(), choixValide.cend(), choix) != choixValide.cend())
+            if (cin >> choice && find(validChoices.cbegin(), validChoices.cend(), choice) != validChoices.cend())
                 break;
 
             cout << "Choix invalide, reessayez :\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
-        if (choix == 1) {
+        if (choice == 1) {
             int res = 0;
             while (cout << "Merci de saisir un le nombre de privilèges à utiliser :\n" && !(cin >> res) && res <= 0 &&
-                   res > auTourDe->getNbPrivileges()) {
+                   res > activePlayer->getNbPrivileges()) {
                 cin.clear();
             }
             for (int i = 0; i < res; i++) {
-                vector<tuple<size_t, size_t>> choixJeton = choisirJetons(false, true);
-                if (choixJeton.empty()) {
+                vector<tuple<size_t, size_t>> chosenTokens = chooseTokens(false, true);
+                if (chosenTokens.empty()) {
                     return {true, true};
                 }
                 size_t x, y = 0;
-                tie(x, y) = choixJeton[0];
-                utiliserPrivilege(*plateau.getJetons()[plateau.getPosition(x, y)]);
+                tie(x, y) = chosenTokens[0];
+                usePrivilege(*board.getTokens()[board.getPosition(x, y)]);
             }
             return {true, false};
         }
-        if (choix == 2) {
-            plateau.remplirPlateau(sachet);
+        if (choice == 2) {
+            board.fillBoard(bag);
             return {true, false};
         }
-        if (choix == 0) {
+        if (choice == 0) {
             return {false, true};
         }
         return {false, false};
     }
 
 
-    tuple<bool, bool> Partie::actionOptionnelleIA() {
-        size_t choix = 0;
-        vector choixValide{3};
-        if (auTourDe->getNbPrivileges() > 0) {
-            choixValide.push_back(1);
+    tuple<bool, bool> Game::actionOptionalAI() {
+        size_t choice;
+        vector validChoices{3};
+        if (activePlayer->getNbPrivileges() > 0) {
+            validChoices.push_back(1);
         }
-        if (sachet.getNbJetons() > 0) {
-            choixValide.push_back(2);
+        if (bag.getNbTokens() > 0) {
+            validChoices.push_back(2);
         }
-        if (find(choixValide.begin(), choixValide.end(), 2) != choixValide.end())
-            choix = 2;
+        if (find(validChoices.begin(), validChoices.end(), 2) != validChoices.end())
+            choice = 2;
         else {
             random_device dev;
             mt19937 rng(dev());
-            uniform_int_distribution<> dis(0, choixValide.size() - 1);
-            choix = choixValide[dis(rng)];
+            uniform_int_distribution<> dis(0, validChoices.size() - 1);
+            choice = validChoices[dis(rng)];
         }
-        if (choix == 1) {
+        if (choice == 1) {
             random_device dev;
             mt19937 rng(dev());
-            uniform_int_distribution<> dis(0, auTourDe->getNbPrivileges());
+            uniform_int_distribution<> dis(0, activePlayer->getNbPrivileges());
             int res = dis(rng);
             for (int i = 0; i < res; i++) {
-                vector<tuple<size_t, size_t>> choixJeton = choisirJetonsIA(false, true, false, Couleur::bleu);
-                if (choixJeton.empty()) {
+                vector<tuple<size_t, size_t>> chosenTokens = chooseTokensAI(false, true, false, Color::blue);
+                if (chosenTokens.empty()) {
                     return {true, true};
                 }
                 size_t x, y = 0;
-                tie(x, y) = choixJeton[0];
-                utiliserPrivilege(*plateau.getJetons()[plateau.getPosition(x, y)]);
+                tie(x, y) = chosenTokens[0];
+                usePrivilege(*board.getTokens()[board.getPosition(x, y)]);
             }
             return {true, false};
         }
-        if (choix == 2) {
-            plateau.remplirPlateau(sachet);
+        if (choice == 2) {
+            board.fillBoard(bag);
             return {true, false};
         }
         return {false, false};
     }
 
 
-
-    bool Partie::actionObligatoireIA() {
-        int choix = 0; {
-            vector choixValide{2};
-            if (plateau.getNbJetons() > 0 && plateau.getNbJetons() != plateau.getNbJetonsOr()) {
-                choixValide.push_back(1);
+    bool Game::actionMandatoryAI() {
+        int choice;
+        {
+            vector validChoices{2};
+            if (board.getNbTokens() > 0 && board.getNbTokens() != board.getNbGoldTokens()) {
+                validChoices.push_back(1);
             }
-            if (peutReserver()) {
-                choixValide.push_back(3);
+            if (canReserveJewel()) {
+                validChoices.push_back(3);
             }
             random_device dev;
             mt19937 rng(dev());
-            uniform_int_distribution<> dis(0, choixValide.size()-1);
-            choix = choixValide[dis(rng)];
+            uniform_int_distribution<> dis(0, validChoices.size() - 1);
+            choice = validChoices[dis(rng)];
         } // toujours pour rester léger en mémoire (c'est marginal mais quand meme)
-        bool choisi = false; // nous permet de vérifier si le joueur a annulé on non
-        if (choix == 1) {
-            const auto jetonsChoisis = choisirJetonsIA(false, false, false, Couleur::bleu);
-            for (const auto coords: jetonsChoisis) {
+        bool hasChosen = false; // nous permet de vérifier si le Player a annulé on non
+        if (choice == 1) {
+            const auto chosenTokens = chooseTokensAI(false, false, false, Color::blue);
+            for (const auto coords: chosenTokens) {
                 auto [x, y] = coords;
-                prendreJetons(x, y);
-                choisi = true;
+                takeToken(x, y);
+                hasChosen = true;
             }
-            if (!choisi)
-                return actionObligatoireIA();
-            return choisi;
+            if (!hasChosen)
+                return actionMandatoryAI();
+            return hasChosen;
         }
-        if (choix == 2) {
-            const tuple<vector<CarteJoaillerie *>, size_t> carteChoisie = choisirCarteIA(true);
-            if (auto [container, index] = carteChoisie; index != -1) {
-                choisi = true;
-                if (container[index]->getCouleurReduc() == Couleur::perle)
-                    quelleCouleurIA(container, index);
-                acheterCarteJoaillerie(container, index);
-                // Choix de la carte Royale si plus de 3 couronnes
-                if (auTourDe->getNbCouronnes() >= 3 && auTourDe->getCartesRoyale().size() < 2) {
+        if (choice == 2) {
+            const tuple<vector<CardJewels *>, size_t> chosenCard = chooseCardJewelsAI(true);
+            if (auto [container, index] = chosenCard; index != -1) {
+                hasChosen = true;
+                if (container[index]->getDiscountColor() == Color::pearl)
+                    whichColorAI(container, index);
+                buyJewel(container, index);
+                // Choix de la card Royale si plus de 3 crowns
+                if (activePlayer->getNbCrowns() >= 3 && activePlayer->getCardsRoyals().size() < 2) {
                     random_device dev;
                     mt19937 rng(dev());
-                    uniform_int_distribution<> dis(0, cartesRoyales.size()-1);
-                    prendreCarteRoyale(dis(rng));
-                    auTourDe->retirerCouronne(3);
+                    uniform_int_distribution<> dis(0, cardsRoyals.size() - 1);
+                    takeRoyal(dis(rng));
+                    activePlayer->crownRemove(3);
                 }
-                appelCapaciteCarte(container, index);
+                cardAbilityActivation(container, index);
             } else
-                return actionObligatoireIA();
-            return choisi;
+                return actionMandatoryAI();
+            return hasChosen;
         }
-        if (choix == 3) {
-            const tuple<vector<CarteJoaillerie *>, size_t> carteChoisie = choisirCarteIA(false);
-            if (auto [container, index] = carteChoisie; index != -1) {
-                const vector<tuple<size_t, size_t>> choixJeton = choisirJetonsIA(true, true, false, Couleur::bleu);
-                choisi = !choixJeton.empty();
-                if (!choisi) {
-                    return actionObligatoireIA();
+        if (choice == 3) {
+            const tuple<vector<CardJewels *>, size_t> chosenCard = chooseCardJewelsAI(false);
+            if (auto [container, index] = chosenCard; index != -1) {
+                const vector<tuple<size_t, size_t>> chosenTokens = chooseTokensAI(true, true, false, Color::blue);
+                hasChosen = !chosenTokens.empty();
+                if (!hasChosen) {
+                    return actionMandatoryAI();
                 }
-                recupererCarte(container, index, false);
-                auto [x, y] = choixJeton[0];
-                prendreJetons(x, y); //prendre le jeton Or apres avoir réservé la carte;
+                takeJewel(container, index, false);
+                auto [x, y] = chosenTokens[0];
+                takeToken(x, y); //prendre le token Or apres avoir réservé la card;
             } else
-                return actionObligatoireIA();
-            return choisi;
+                return actionMandatoryAI();
+            return hasChosen;
         }
         return false;
     }
 
-    bool Partie::actionObligatoire() {
-        int choix = 0; {
-            vector choixValide{0, 1, 2};
+    bool Game::actionMandatory() {
+        int choice = 0;
+        {
+            vector validChoices{0, 1, 2};
             cout << "Actions possibles:\n";
-            cout << "1: Prendre jusqu'a 3 jetons Gemme et/ou Perle\n";
-            cout << "2: Acheter 1 carte Joaillerie (de la pyramide ou deja reservee)\n";
-            if (peutReserver()) {
-                cout << "3: Reserver une carte Joaillerie\n";
-                choixValide.push_back(3);
+            cout << "1: Prendre jusqu'a 3 tokens Gemme et/ou Perle\n";
+            cout << "2: Acheter 1 card Joaillerie (de la pyramide ou deja reservee)\n";
+            if (canReserveJewel()) {
+                cout << "3: Reserver une card Joaillerie\n";
+                validChoices.push_back(3);
             }
             cout << "0: Quitter\n";
             while (true) {
-                if (cin >> choix && choix >= 0 && choix <= 3 &&
-                    find(choixValide.cbegin(), choixValide.cend(), choix) != choixValide.cend())
+                if (cin >> choice && choice >= 0 && choice <= 3 &&
+                    find(validChoices.cbegin(), validChoices.cend(), choice) != validChoices.cend())
                     break;
                 cout << "Choix invalide, reessayez :\n";
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
         } // toujours pour rester léger en mémoire (c'est marginal mais quand meme)
-        bool choisi = false; // nous permet de vérifier si le joueur a annulé on non
-        if (choix == 1) {
-            const auto jetonsChoisis = choisirJetons(false, false);
-            for (const auto coords: jetonsChoisis) {
+        bool hasChosen = false; // nous permet de vérifier si le Player a annulé on non
+        if (choice == 1) {
+            const auto chosenTokens = chooseTokens(false, false);
+            for (const auto coords: chosenTokens) {
                 auto [x, y] = coords;
-                prendreJetons(x, y);
-                choisi = true;
+                takeToken(x, y);
+                hasChosen = true;
             }
-            if (!choisi)
-                return actionObligatoire();
-            return choisi;
+            if (!hasChosen)
+                return actionMandatory();
+            return hasChosen;
         }
-        if (choix == 2) {
-            const tuple<vector<CarteJoaillerie *>, size_t> carteChoisie = choisirCarte(true);
-            if (auto [container, index] = carteChoisie; index != -1) {
-                choisi = true;
-                if (container[index]->getCouleurReduc() == Couleur::perle)
-                    quelleCouleur(container, index);
-                acheterCarteJoaillerie(container, index);
-                // Choix de la carte Royale si plus de 3 couronnes
-                if (auTourDe->getNbCouronnes() >= 3 && auTourDe->getCartesRoyale().size() < 2) {
-                    prendreCarteRoyale(choisirCarteRoyale());
-                    auTourDe->retirerCouronne(3);
+        if (choice == 2) {
+            const tuple<vector<CardJewels *>, size_t> chosenCard = chooseCardJewels(true);
+            if (auto [container, index] = chosenCard; index != -1) {
+                hasChosen = true;
+                if (container[index]->getDiscountColor() == Color::pearl)
+                    whichColor(container, index);
+                buyJewel(container, index);
+                // Choix de la card Royale si plus de 3 crowns
+                if (activePlayer->getNbCrowns() >= 3 && activePlayer->getCardsRoyals().size() < 2) {
+                    takeRoyal(chooseCardRoyals());
+                    activePlayer->crownRemove(3);
                 }
-                appelCapaciteCarte(container, index);
+                cardAbilityActivation(container, index);
             } else
-                return actionObligatoire();
-            return choisi;
+                return actionMandatory();
+            return hasChosen;
         }
-        if (choix == 3) {
-            const tuple<vector<CarteJoaillerie *>, size_t> carteChoisie = choisirCarte(false);
-            if (auto [container, index] = carteChoisie; index != -1) {
-                const vector<tuple<size_t, size_t>> choixJeton = choisirJetons(true, true);
-                choisi = !choixJeton.empty();
-                if (!choisi)
-                    return actionObligatoire();
-                recupererCarte(container, index, false);
-                auto [x, y] = choixJeton[0];
-                prendreJetons(x, y); //prendre le jeton Or apres avoir réservé la carte;
+        if (choice == 3) {
+            const tuple<vector<CardJewels *>, size_t> chosenCard = chooseCardJewels(false);
+            if (auto [container, index] = chosenCard; index != -1) {
+                const vector<tuple<size_t, size_t>> chosenTokens = chooseTokens(true, true);
+                hasChosen = !chosenTokens.empty();
+                if (!hasChosen)
+                    return actionMandatory();
+                takeJewel(container, index, false);
+                auto [x, y] = chosenTokens[0];
+                takeToken(x, y); //prendre le token Or apres avoir réservé la card;
             } else
-                return actionObligatoire();
-            return choisi;
+                return actionMandatory();
+            return hasChosen;
         }
         return false;
     }
 
-    vector<tuple<size_t, size_t>> Partie::choisirJetonsIA(const bool peutPrendreOr, const bool juste1Jeton, const bool prendreCouleurCapacite, jeton::Couleur c) {
-        vector<tuple<size_t, size_t>> choix;
-        map<Couleur, int> nbCouleur;
-        int res = 1;
-        if (!peutPrendreOr) {
-            res = 3;
-        } else {
-            res = 1;
+    vector<tuple<size_t, size_t>>
+    Game::chooseTokensAI(bool canTakeGold, bool onlyOneToken, bool takeColorAbility, token::Color color) {
+        vector<tuple<size_t, size_t>> choice;
+        map<Color, int> nbByColor;
+        int nbTokenTaken = 1;
+        if (!canTakeGold) {
+            nbTokenTaken = 3;
         }
 
         int i = 0;
@@ -562,103 +574,104 @@ namespace partie {
         int x0 = 0;
         int y0 = 0;
 
-        if (prendreCouleurCapacite) {
+        if (takeColorAbility) {
             for (size_t a = 0; a < 5; a++) {
                 for (size_t b = 0; b < 5; b++) {
-                    if (plateau.getJetons()[plateau.getPosition(a, b)] != nullptr
-                        && plateau.getJetons()[plateau.getPosition(a, b)]->getCouleur() == c) {
-                        choix.emplace_back(a, b);
-                        return choix;
+                    if (board.getTokens()[board.getPosition(a, b)] != nullptr
+                        && board.getTokens()[board.getPosition(a, b)]->getColor() == color) {
+                        choice.emplace_back(a, b);
+                        return choice;
                     }
                 }
             }
-            return choix;
+            return choice;
         }
-           if (!peutPrendreOr) {
-               random_device dev;
-               mt19937 rng(dev());
-               uniform_int_distribution<> dis(0, 4);
-               int cpt = 0;
-               do {
-                   x = dis(rng);
-                   y = dis(rng);
-                   cpt++;
-                   if (cpt == 25) return choix;
-               } while (plateau.getJetons()[plateau.getPosition(x, y)] == nullptr
-               || plateau.getJetons()[plateau.getPosition(x, y)]->getCouleur() == Couleur::gold);
-               x0 = x;
-               y0 = y;
-               choix.emplace_back(x, y);
-               i++;
-               if (juste1Jeton) return choix;
-           } if (peutPrendreOr) {
-               for (size_t a = 0; a < 5; a++) {
-                   for (size_t b = 0; b < 5; b++) {
-                       if (plateau.getJetons()[plateau.getPosition(a, b)] != nullptr
-                           && plateau.getJetons()[plateau.getPosition(a, b)]->getCouleur() == Couleur::gold) {
-                           choix.emplace_back(a, b);
-                           return choix;
-                       }
-                   }
-               }
-           }
+        if (!canTakeGold) {
+            random_device dev;
+            mt19937 rng(dev());
+            uniform_int_distribution<> dis(0, 4);
+            int count = 0;
+            do {
+                x = dis(rng);
+                y = dis(rng);
+                count++;
+                if (count == 25) return choice;
+            } while (board.getTokens()[board.getPosition(x, y)] == nullptr
+                     || board.getTokens()[board.getPosition(x, y)]->getColor() == Color::gold);
+            x0 = x;
+            y0 = y;
+            choice.emplace_back(x, y);
+            i++;
+            if (onlyOneToken) return choice;
+        }
+        if (canTakeGold) {
+            for (size_t a = 0; a < 5; a++) {
+                for (size_t b = 0; b < 5; b++) {
+                    if (board.getTokens()[board.getPosition(a, b)] != nullptr
+                        && board.getTokens()[board.getPosition(a, b)]->getColor() == Color::gold) {
+                        choice.emplace_back(a, b);
+                        return choice;
+                    }
+                }
+            }
+        }
         for (int a = -1; a <= 1; a++) {
             for (int b = -1; b <= 1; b++) {
-                if ((a != 0 || b != 0) && x0+a >= 0 && x0+a <= 4 && y0+b >= 0 && y0+b <= 4 &&
-                    plateau.getJetons()[plateau.getPosition(x0+a, y0+b)] != nullptr
-                    && plateau.getJetons()[plateau.getPosition(x0+a, y0+b)]->getCouleur() != Couleur::gold) {
-                    choix.emplace_back(x0+a, y0+b);
-                    if (verifColineaire(choix) && verifProxi(choix)) {
+                if ((a != 0 || b != 0) && x0 + a >= 0 && x0 + a <= 4 && y0 + b >= 0 && y0 + b <= 4 &&
+                    board.getTokens()[board.getPosition(x0 + a, y0 + b)] != nullptr
+                    && board.getTokens()[board.getPosition(x0 + a, y0 + b)]->getColor() != Color::gold) {
+                    choice.emplace_back(x0 + a, y0 + b);
+                    if (checkCollinearity(choice) && checkProximity(choice)) {
                         i++;
-                        nbCouleur[plateau.getJetons()[plateau.getPosition(x0+a, y0+b)]->getCouleur()] += 1;
-                        if (i == res) break;
+                        nbByColor[board.getTokens()[board.getPosition(x0 + a, y0 + b)]->getColor()] += 1;
+                        if (i == nbTokenTaken) break;
                     } else {
-                        choix.pop_back();
+                        choice.pop_back();
                     }
                 }
             }
-            if (i == res) break;
+            if (i == nbTokenTaken) break;
         }
-        if (!juste1Jeton && verifNbCouleurs(nbCouleur)) {
-            cout << "L'IA a pris 3 jetons de la meme couleur ou\n"
-                    "2 jetons Perle avec cette action, votre prenez donc 1 Privilege.\n";
-            changeJoueur();
-            prendreUnPrivilege();
-            changeJoueur();
+        if (!onlyOneToken && checkNbColors(nbByColor)) {
+            cout << "L'IA a pris 3 tokens de la meme color ou\n"
+                    "2 tokens Perle avec cette action, votre prenez donc 1 Privilege.\n";
+            changePlayer();
+            takePrivilege();
+            changePlayer();
         }
-        return choix;
+        return choice;
     }
 
-    vector<tuple<size_t, size_t>> Partie::choisirJetons(const bool peutPrendreOr, const bool juste1Jeton) {
-        vector<tuple<size_t, size_t>> choix;
-        map<Couleur, int> nbCouleur;
-        plateau.afficherPlateau();
-        int res = 1;
-        if (!peutPrendreOr) {
-            if (!juste1Jeton) {
-                cout << "Combien de jetons voulez-vous prendre ?\n";
-                res = -1;
-                while (res <= 0 || res > 3) {
+    vector<tuple<size_t, size_t>> Game::chooseTokens(const bool canTakeGold, const bool onlyOneToken) {
+        vector<tuple<size_t, size_t>> choice;
+        map<Color, int> nbByColor;
+        board.displayBoard();
+        int answer = 1;
+        if (!canTakeGold) {
+            if (!onlyOneToken) {
+                cout << "Combien de tokens voulez-vous prendre ?\n";
+                answer = -1;
+                while (answer <= 0 || answer > 3) {
                     cout << "Merci de saisir un entier entre 1 et 3 (0 pour quitter le mode) :\n";
-                    if (cin >> res && res == 0) return choix;
+                    if (cin >> answer && answer == 0) return choice;
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
             } else {
-                res = 1;
+                answer = 1;
             }
-            cout << "Vous ne devez pas prendre de jeton Or.\n";
-        } else cout << "Vous devez prendre un jeton Or sur le plateau\n";
+            cout << "Vous ne devez pas prendre de token Or.\n";
+        } else cout << "Vous devez prendre un token Or sur le board\n";
         int i = 0;
         int x = -1;
         int y = -1;
-        while (i < res) {
-            cout << "Saisie pour le jeton numero : " << i + 1 << "\n";
+        while (i < answer) {
+            cout << "Saisie pour le token numero : " << i + 1 << "\n";
             while (x <= 0 || x > 5) {
                 cout << "Merci de saisir le numero de ligne entre 1 et 5 (0 pour quitter le mode) :\n";
                 if (cin >> x && x == 0) {
-                    choix.clear();
-                    return choix;
+                    choice.clear();
+                    return choice;
                 }
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -666,164 +679,116 @@ namespace partie {
             while (y <= 0 || y > 5) {
                 cout << "Merci de saisir le numero de colonne entre 1 et 5 (0 pour quitter le mode) :\n";
                 if (cin >> y && y == 0) {
-                    choix.clear();
-                    return choix;
+                    choice.clear();
+                    return choice;
                 }
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
             x--; // passage en index depart a 0
             y--;
-            if (plateau.getJetons()[plateau.getPosition(x, y)] != nullptr) {
-                if (!peutPrendreOr && plateau.getJetons()[plateau.getPosition(x, y)]->getCouleur() == Couleur::gold) {
-                    cout << "Vous ne pouvez pas prendre de jeton Or.\n";
-                } else if (peutPrendreOr && plateau.getJetons()[plateau.getPosition(x, y)]->getCouleur() !=
-                           Couleur::gold) {
-                    cout << "Vous devez prendre un jeton Or\n";
+            if (board.getTokens()[board.getPosition(x, y)] != nullptr) {
+                if (!canTakeGold && board.getTokens()[board.getPosition(x, y)]->getColor() == Color::gold) {
+                    cout << "Vous ne pouvez pas prendre de token Or.\n";
+                } else if (canTakeGold && board.getTokens()[board.getPosition(x, y)]->getColor() !=
+                                          Color::gold) {
+                    cout << "Vous devez prendre un token Or\n";
                 } else {
                     if (i == 0) {
-                        choix.emplace_back(x, y);
+                        choice.emplace_back(x, y);
                         i++;
                     } else {
-                        choix.emplace_back(x, y);
-                        if (verifProxi(choix) && verifColineaire(choix)) {
+                        choice.emplace_back(x, y);
+                        if (checkProximity(choice) && checkCollinearity(choice)) {
                             i++;
                         } else {
-                            choix.pop_back();
+                            choice.pop_back();
                             cout <<
-                                    "Les coordonnees ne sont pas correctes.\nMerci de recommencer la saisie de ce jeton.\n";
+                                 "Les coordonnees ne sont pas correctes.\nMerci de recommencer la saisie de ce token.\n";
                         }
                     }
-                    nbCouleur[plateau.getJetons()[plateau.getPosition(x, y)]->getCouleur()] += 1;
+                    nbByColor[board.getTokens()[board.getPosition(x, y)]->getColor()] += 1;
                 }
             }
             x = -1;
             y = -1;
         }
-        if (!juste1Jeton && verifNbCouleurs(nbCouleur)) {
-            cout << "Vous avez pris 3 jetons de la meme couleur ou\n"
-                    "les 2 jetons Perle avec cette action, votre adversaire prend donc 1 Privilege.\n";
-            changeJoueur();
-            prendreUnPrivilege();
-            changeJoueur();
+        if (!onlyOneToken && checkNbColors(nbByColor)) {
+            cout << "Vous avez pris 3 tokens de la meme color ou\n"
+                    "les 2 tokens Perle avec cette action, votre adversaire prend donc 1 Privilege.\n";
+            changePlayer();
+            takePrivilege();
+            changePlayer();
         }
-        return choix;
+        return choice;
     }
 
-    bool verifNbCouleurs(map<Couleur, int> nbCouleur) {
+    bool checkNbColors(const map<Color, int> &tokens) {
         return any_of(
-            nbCouleur.cbegin(), nbCouleur.cend(),
-            [](const auto kv) { return kv.second == 3 || (kv.first == Couleur::perle && kv.second == 2); }
+                tokens.cbegin(), tokens.cend(),
+                [](const auto kv) { return kv.second == 3 || (kv.first == Color::pearl && kv.second == 2); }
         );
     }
 
-    /*
-    bool sontAlignes(size_t x1, size_t y1, size_t x2, size_t y2) {
-        return x1 * (y2 - y1) == y1 * (x2 - x1);
-    }
-
-    bool sontAdjacent(int x1, int y1, int x2, int y2) {
-        return abs(x1 - x2) <= 1 && abs(y1 - y2) <= 1;
-    }
-
-    bool verifCoord2(const vector<tuple<size_t, size_t>>& choix, const size_t x, const size_t y, const size_t nb) {
-        bool adjacent = false;
-        for (size_t i = 0; i < choix.size(); i++) {
-            auto [coordX0, coordY0] = choix[i];
-            if (coordX0 == x && coordY0 == y) return false;
-            if (!sontAlignes(coordX0, coordY0, x, y)) return false;
-            if (sontAdjacent(coordX0, coordY0, x, y)) adjacent = true;
-        }
-        return adjacent;
-    }
-    bool verifCoord(const vector<tuple<size_t, size_t>>& choix, const size_t x, const size_t y, const size_t nb) {
-        auto [coordX0, coordY0] = choix[0];
-
-        if (nb == 1) {
-            if ((x == coordX0 - 1 && y == coordY0 + 1) || (x == coordX0 + 1 && y == coordY0 - 1)) return true;
-            if ((x == coordX0 + 1 && y == coordY0 + 1) || (x == coordX0 - 1 && y == coordY0 - 1)) return true;
-            if ((x == coordX0 + 1 && y == coordY0) || (x == coordX0 - 1 && y == coordY0)) return true;
-            if ((x == coordX0 && y == coordY0 + 1) || (x == coordX0 && y == coordY0 - 1)) return true;
-        } else if (nb == 2) {
-            auto [coordX1, coordY1] = choix[1];
-            if ((coordX1 == coordX0 - 1 && coordY1 == coordY0 + 1 && x == coordX1 - 1 && y == coordY1 + 1) || (
-                    coordX1 == coordX0 + 1 && coordY1 == coordY0 - 1 && x == coordX1 + 1 && y == coordY1 - 1))
-                return
-                        true;
-            if ((coordX1 == coordX0 + 1 && coordY1 == coordY0 + 1 && x == coordX1 + 1 && y == coordY1 + 1) || (
-                    coordX1 == coordX0 - 1 && coordY1 == coordY0 - 1 && x == coordX1 - 1 && y == coordY1 - 1))
-                return
-                        true;
-            if ((coordX1 == coordX0 + 1 && coordY1 == coordY0 && x == coordX1 + 1 && y == coordY1) || (
-                    coordX1 == coordX0 - 1 && coordY1 == coordY0 && x == coordX1 - 1 && y == coordY1))
-                return true;
-            if ((coordX1 == coordX0 && coordY1 == coordY0 + 1 && x == coordX1 && y == coordY1 + 1) || (
-                    coordX1 == coordX0 && coordY1 == coordY0 - 1 && x == coordX1 && y == coordY1 - 1))
-                return true;
-        } else throw SplendorException("Nombre de jetons choisis invalide");
-
-        return false;
-    }
-*/
-    tuple<vector<CarteJoaillerie *>, size_t> Partie::choisirCarteIA(const bool achat) {
-        int choix;
-        vector<int> choixValides;
-        int cartesParLigne = 3;
-        vector<vector<CarteJoaillerie *>> cartes = {cartesNv3, cartesNv2, cartesNv1};
-        for (int nbContainer = 0; nbContainer < cartes.size(); nbContainer++) {
-            for (int i = 0; i < cartesParLigne; i++) {
-                if (cartes[nbContainer][i]) {
-                    if (peutAcheter(cartes[nbContainer][i]) || !achat) {
-                        int choixCarte = 10 * (nbContainer + 1) + (i + 1);
-                        choixValides.push_back(choixCarte);
+    tuple<vector<CardJewels *>, size_t> Game::chooseCardJewelsAI(const bool buying) {
+        int choice;
+        vector<int> validChoices;
+        int nbCardsPerLine = 3;
+        vector<vector<CardJewels *>> cards = {cardsLvl3, cardsLvl2, cardsLvl1};
+        for (int nbContainer = 0; nbContainer < cards.size(); nbContainer++) {
+            for (int i = 0; i < nbCardsPerLine; i++) {
+                if (cards[nbContainer][i]) {
+                    if (canBuyJewel(cards[nbContainer][i]) || !buying) {
+                        int chosenCard = 10 * (nbContainer + 1) + (i + 1);
+                        validChoices.push_back(chosenCard);
                     }
                 }
             }
         }
 
-       if (choixValides.size() == 0){
-           choix = 0;
-       } else {
-           random_device dev;
-           mt19937 rng(dev());
-           uniform_int_distribution<> dis(0, choixValides.size()-1);
-           choix = choixValides[dis(rng)];
-       }
-        if (choix == 0)
-            return {cartesNv3, -1};
-        return {cartes[(choix - 11) / 10], (choix - 11) % 10};
+        if (validChoices.empty()) {
+            choice = 0;
+        } else {
+            random_device dev;
+            mt19937 rng(dev());
+            uniform_int_distribution<> dis(0, validChoices.size() - 1);
+            choice = validChoices[dis(rng)];
+        }
+        if (choice == 0)
+            return {cardsLvl3, -1};
+        return {cards[(choice - 11) / 10], (choice - 11) % 10};
     }
 
-    double distance(const tuple<size_t, size_t>& pt1, const tuple<size_t, size_t>& pt2) {
+    double distance(const tuple<size_t, size_t> &pt1, const tuple<size_t, size_t> &pt2) {
         const auto [x1, y1] = pt1;
         const auto [x2, y2] = pt2;
         return sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
     }
 
-    bool verifProxi(const vector<tuple<size_t, size_t>>& choix) {
-        if (choix.size() == 1)
+    bool checkProximity(const vector<tuple<size_t, size_t>> &choice) {
+        if (choice.size() == 1)
             return true;
-        if (choix.size() == 2)
-            return distance(choix[0], choix[1]) < 2; // si 2, trop loin. en digonale, dist = racine de 2
-        if (choix.size() == 3) {
-            int nbProches = 0;
+        if (choice.size() == 2)
+            return distance(choice[0], choice[1]) < 2; // si 2, trop loin. en digonale, dist = racine de 2
+        if (choice.size() == 3) {
+            int nbCloseTokens = 0;
             for (int i = 0; i < 3; i++) {
                 for (int j = i + 1; j < 3; j++)
-                    if (const auto dist = distance(choix[i], choix[j]); dist < 2)
-                        nbProches++;
+                    if (const auto dist = distance(choice[i], choice[j]); dist < 2)
+                        nbCloseTokens++;
             }
-            return nbProches == 2;
+            return nbCloseTokens == 2;
         }
-        throw SplendorException("Nombre de jetons sélectionnés invalide");
+        throw SplendorException("Nombre de tokens sélectionnés invalide");
     }
 
-    bool verifColineaire(const vector<tuple<size_t, size_t>>& choix) {
-        if (choix.size() > 3)
-            throw SplendorException("Trop de jetons sélectionnés");
-        if (choix.size() != 3)
+    bool checkCollinearity(const vector<tuple<size_t, size_t>> &choice) {
+        if (choice.size() > 3)
+            throw SplendorException("Trop de tokens sélectionnés");
+        if (choice.size() != 3)
             return true;
         vector<size_t> coords;
-        for (const auto [x, y]: choix) {
+        for (const auto [x, y]: choice) {
             coords.push_back(x);
             coords.push_back(y);
         }
@@ -831,31 +796,31 @@ namespace partie {
         return (coords[3] - coords[1]) * (coords[4] - coords[2]) == (coords[5] - coords[3]) * (coords[2] - coords[0]);
     }
 
-    tuple<vector<CarteJoaillerie *>, size_t> Partie::choisirCarte(const bool achat) {
-        int choix;
-        vector<int> choixValides;
+    tuple<vector<CardJewels *>, size_t> Game::chooseCardJewels(const bool buying) {
+        int choice;
+        vector<int> validChoices;
         cout << "Pyramide :\n";
-        afficherPyramide();
-        auto reserveJoueur = auTourDe->getReserve();
-        auto nbReserve = reserveJoueur.size();
+        printPyramid();
+        auto playerReserve = activePlayer->getReserve();
+        auto nbReserve = playerReserve.size();
         if (nbReserve > 0) {
             cout << "Reserve :\n";
-            afficherLigneCartes(reserveJoueur, nbReserve, false);
+            printCardsLine(playerReserve, nbReserve, false);
         }
-        int cartesParLigne = 3;
-        cout << "\nChoississez la carte que vous voulez en entrant le nombre correspondant:\n";
-        vector<vector<CarteJoaillerie *>> cartes = {cartesNv3, cartesNv2, cartesNv1, reserveJoueur};
+        int nbCardsPerLine = 3;
+        cout << "\nChoississez la card que vous voulez en entrant le nombre correspondant:\n";
+        vector<vector<CardJewels *>> cards = {cardsLvl3, cardsLvl2, cardsLvl1, playerReserve};
         cout << "\nPyramide :";
-        for (int nbContainer = 0; nbContainer < cartes.size() - 1; nbContainer++) {
+        for (int nbContainer = 0; nbContainer < cards.size() - 1; nbContainer++) {
             cout << "\n";
-            for (int space = cartesParLigne; space < 5; space++)
+            for (int space = nbCardsPerLine; space < 5; space++)
                 cout << "  ";
-            for (int i = 0; i < cartesParLigne; i++) {
-                if (cartes[nbContainer][i]) {
-                    if (peutAcheter(cartes[nbContainer][i]) || !achat) {
-                        int choixCarte = 10 * (nbContainer + 1) + (i + 1);
-                        choixValides.push_back(choixCarte);
-                        cout << choixCarte;
+            for (int i = 0; i < nbCardsPerLine; i++) {
+                if (cards[nbContainer][i]) {
+                    if (canBuyJewel(cards[nbContainer][i]) || !buying) {
+                        int chosenCard = 10 * (nbContainer + 1) + (i + 1);
+                        validChoices.push_back(chosenCard);
+                        cout << chosenCard;
                     } else
                         cout << "XX";
                 } else
@@ -863,362 +828,392 @@ namespace partie {
                 cout << "  ";
             }
             cout << "\n";
-            cartesParLigne++;
+            nbCardsPerLine++;
         }
         if (nbReserve > 0) {
             cout << "\nReserve :\n";
             for (int i = 0; i < nbReserve; i++) {
-                if (peutAcheter(reserveJoueur[i]) || !achat) {
-                    int choixCarte = 40 + (i + 1);
-                    choixValides.push_back(choixCarte);
-                    cout << choixCarte;
+                if (canBuyJewel(playerReserve[i]) || !buying) {
+                    int chosenCard = 40 + (i + 1);
+                    validChoices.push_back(chosenCard);
+                    cout << chosenCard;
                 } else
                     cout << "XX";
                 cout << "  ";
             }
             cout << "\n";
         }
-        cout << "\nCarte choisie (0 pour annuler):";
-        cin >> choix;
-        while (find(choixValides.cbegin(), choixValides.cend(), choix) == choixValides.cend() && choix != 0) {
-            cout << "\nChoix invalide, veuillez entrer un choix valide:";
-            cin >> choix;
+        cout << "\nCardRoyals choisie (0 pour annuler):";
+        cin >> choice;
+        while (find(validChoices.cbegin(), validChoices.cend(), choice) == validChoices.cend() && choice != 0) {
+            cout << "\nChoix invalide, veuillez entrer un choice valide:";
+            cin >> choice;
         }
-        if (choix == 0)
-            return {cartesNv3, -1};
-        return {cartes[(choix - 11) / 10], (choix - 11) % 10};
+        if (choice == 0)
+            return {cardsLvl3, -1};
+        return {cards[(choice - 11) / 10], (choice - 11) % 10};
     }
 
-    size_t Partie::choisirCarteRoyale() const {
-        int choix;
-        vector<int> choixValides;
-        cout << "\nVous avez accumulé assez de couronnes pour récupérer une carte Royale !\n";
-        afficherCartesRoyale(cartesRoyales);
-        cout << "\nChoississez la carte que vous voulez en entrant le nombre correspondant :\n";
-        for (int i = 0; i < cartesRoyales.size(); i++) {
+    size_t Game::chooseCardRoyals() const {
+        int choice;
+        vector<int> validChoices;
+        cout << "\nVous avez accumulé assez de crowns pour récupérer une card Royale !\n";
+        printRoyals(cardsRoyals);
+        cout << "\nChoississez la card que vous voulez en entrant le nombre correspondant :\n";
+        for (int i = 0; i < cardsRoyals.size(); i++) {
             cout << "  " << i + 1;
-            choixValides.push_back(i + 1);
+            validChoices.push_back(i + 1);
         }
-        cout << "\nCarte choisie:";
-        while (find(choixValides.cbegin(), choixValides.cend(), choix) == choixValides.cend() && choix != 0) {
-            cout << "\nChoix invalide, veuillez entrer un choix valide:";
-            cin >> choix;
+        cout << "\nCardRoyals choisie:";
+        while (find(validChoices.cbegin(), validChoices.cend(), choice) == validChoices.cend() && choice != 0) {
+            cout << "\nChoix invalide, veuillez entrer un choice valide:";
+            cin >> choice;
         }
-        return choix - 1;
+        return choice - 1;
     }
 
-    void Partie::utiliserPrivilege(const Jeton& j) {
-        if (auTourDe->getNbPrivileges() != 0) {
-            auTourDe->retirerPrivilege();
-            plateau.retirerJetons(j);
-            auTourDe->prendreJeton(j.getCouleur());
-        }
-    }
-
-    void Partie::prendreJetons(const size_t a, const size_t b) {
-        if (plateau.getJetons()[plateau.getPosition(a, b)] != nullptr) {
-            const Couleur c = plateau.getJetons()[plateau.getPosition(a, b)]->getCouleur();
-            auTourDe->prendreJeton(c);
-            plateau.retirerJetons(*plateau.getJetons()[plateau.getPosition(a, b)]);
+    void Game::usePrivilege(const token::Token &token) {
+        if (activePlayer->getNbPrivileges() != 0) {
+            activePlayer->privilegeRemove();
+            board.removeToken(token);
+            activePlayer->takeToken(token.getColor());
         }
     }
 
-    bool Partie::peutAcheter(const CarteJoaillerie* c) const {
-        auto jetons = auTourDe->getJetons();
-        size_t nbJetonsOr = jetons[Couleur::gold];
-        for (auto kv : *c->getPrix()) {
-            const int diff = kv.second - jetons[kv.first] - auTourDe->getBonus()[kv.first];
-            if (diff > long(nbJetonsOr) && diff >= 0)
+    void Game::takeToken(size_t x, size_t y) {
+        if (board.getTokens()[board.getPosition(x, y)] != nullptr) {
+            const Color color = board.getTokens()[board.getPosition(x, y)]->getColor();
+            activePlayer->takeToken(color);
+            board.removeToken(*board.getTokens()[board.getPosition(x, y)]);
+        }
+    }
+
+    bool Game::canBuyJewel(const card::CardJewels *card) const {
+        auto tokens = activePlayer->getTokens();
+        size_t nbGoldTokens = tokens[Color::gold];
+        for (auto kv: *card->getPrice()) {
+            const int diff = kv.second - tokens[kv.first] - activePlayer->getBonus()[kv.first];
+            if (diff > long(nbGoldTokens) && diff >= 0)
                 return false;
             if (diff > 0) {
-                nbJetonsOr -= diff;
+                nbGoldTokens -= diff;
             }
         }
         return true;
     }
 
-    bool Partie::peutReserver() const {
-        const auto jetons = plateau.getJetons();
-        return auTourDe->getReserve().size() < 3 &&
+    bool Game::canReserveJewel() const {
+        const auto tokens = board.getTokens();
+        return activePlayer->getReserve().size() < 3 &&
                any_of(
-                   jetons.cbegin(),
-                   jetons.cend(),
-                   [](auto jeton) {
-                       if (jeton) return jeton->isGold();
-                       return false;
-                   }
+                       tokens.cbegin(),
+                       tokens.cend(),
+                       [](auto jeton) {
+                           if (jeton) return jeton->isGold();
+                           return false;
+                       }
                );
     }
 
-    void Partie::prendreCarteRoyale(const size_t index) {
-        auTourDe->recupererCarte(cartesRoyales[index]);
-        cartesRoyales[index] = cartesRoyales[cartesRoyales.size() - 1];
-        cartesRoyales.pop_back();
+    void Game::takeRoyal(size_t index) {
+        activePlayer->takeCardRoyals(cardsRoyals[index]);
+        cardsRoyals[index] = cardsRoyals[cardsRoyals.size() - 1];
+        cardsRoyals.pop_back();
     }
 
-    void Partie::recupererCarte(const vector<CarteJoaillerie *>& container, const size_t index, const bool achat) {
-        if (achat)
-            auTourDe->recupererCarteJoaillerie(container[index]);
+    void Game::takeJewel(const vector<card::CardJewels *> &container, size_t index, bool buying) {
+        if (buying)
+            activePlayer->takeCardJewels(container[index]);
         else
-            auTourDe->reserverCarteJoaillerie(container[index]);
-        if (container == cartesNv1) {
-            if (cartesNv1.size() > 5) {
-                cartesNv1[index] = cartesNv1[cartesNv1.size() - 1];
-                cartesNv1.pop_back();
-            } else cartesNv1[index] = nullptr;
-        } else if (container == cartesNv2) {
-            if (cartesNv2.size() > 4) {
-                cartesNv2[index] = cartesNv2[cartesNv2.size() - 1];
-                cartesNv2.pop_back();
-            } else cartesNv2[index] = nullptr;
-        } else if (container == cartesNv3) {
-            if (cartesNv3.size() > 3) {
-                cartesNv3[index] = cartesNv3[cartesNv3.size() - 1];
-                cartesNv3.pop_back();
-            } else cartesNv3[index] = nullptr;
-        } else if (container == auTourDe->getReserve()){
-            auTourDe->enleverDeLaReserve(container[index]);
+            activePlayer->reserveCardJewels(container[index]);
+        if (container == cardsLvl1) {
+            if (cardsLvl1.size() > 5) {
+                cardsLvl1[index] = cardsLvl1[cardsLvl1.size() - 1];
+                cardsLvl1.pop_back();
+            } else cardsLvl1[index] = nullptr;
+        } else if (container == cardsLvl2) {
+            if (cardsLvl2.size() > 4) {
+                cardsLvl2[index] = cardsLvl2[cardsLvl2.size() - 1];
+                cardsLvl2.pop_back();
+            } else cardsLvl2[index] = nullptr;
+        } else if (container == cardsLvl3) {
+            if (cardsLvl3.size() > 3) {
+                cardsLvl3[index] = cardsLvl3[cardsLvl3.size() - 1];
+                cardsLvl3.pop_back();
+            } else cardsLvl3[index] = nullptr;
+        } else if (container == activePlayer->getReserve()) {
+            activePlayer->removeFromReserve(container[index]);
         } else throw SplendorException("Conteneur de cartes inconnu");
     }
 
-    void Partie::acheterCarteJoaillerie(const vector<CarteJoaillerie *>& container, const size_t index) {
-        for (const auto [couleur, prixCouleur]: *container[index]->getPrix()) {
-            for (int i = 0; i < max(int(prixCouleur) - int(auTourDe->getBonus()[couleur]), 0); i++) {
-                Couleur couleurPrise = couleur;
-                if (auTourDe->getJetons()[couleur] == 0)
-                    couleurPrise = Couleur::gold;
-                sachet.remettreJetonDansSachet(couleurPrise);
-                auTourDe->enleverJeton(couleurPrise);
+    void Game::buyJewel(const vector<card::CardJewels *> &container, size_t index) {
+        for (const auto [color, colorPrice]: *container[index]->getPrice()) {
+            for (int i = 0; i < max(int(colorPrice) - int(activePlayer->getBonus()[color]), 0); i++) {
+                Color usedColor = color;
+                if (activePlayer->getTokens()[color] == 0)
+                    usedColor = Color::gold;
+                bag.returnTokenToBag(usedColor);
+                activePlayer->giveToken(usedColor);
             }
         }
-        recupererCarte(container, index, true);
+        takeJewel(container, index, true);
     }
 
-    bool Partie::verifFinTour() {
-        if (const size_t nb = auTourDe->getNbJetons(); nb > 10) {
-            if (!auTourDe->isIA()) demanderReposerJetonsTerminal(nb - 10);
-            else demanderReposerJetonsTerminalIA(nb - 10);
+    bool Game::endOfTurnChecks() {
+        if (const size_t nb = activePlayer->getNbTokens(); nb > 10) {
+            if (!activePlayer->isAI()) discardExcessTokens(nb - 10);
+            else discardExcessTokensAI(nb - 10);
         }
-        return verifVictoire();
+        return winCheck();
     }
 
-    void Partie::demanderReposerJetonsTerminalIA(const size_t nb) {
-        char rep = ' ';
-        vector<char> choixValides = {'B', 'W', 'V', 'N', 'R', 'P', 'G'};
+    void Game::discardExcessTokensAI(size_t nb) {
+        char answer;
+        vector<char> validChoices = {'B', 'W', 'V', 'N', 'R', 'P', 'G'};
         size_t i = 0;
         int c = -1;
         random_device dev;
         mt19937 rng(dev());
-        uniform_int_distribution<> dis(0, choixValides.size()-1);
+        uniform_int_distribution<> dis(0, validChoices.size() - 1);
         while (i < nb) {
-            rep = choixValides[dis(rng)];
-            switch (rep) {
-                case 'B': c = 0;
+            answer = validChoices[dis(rng)];
+            switch (answer) {
+                case 'B':
+                    c = 0;
                     break;
-                case 'W': c = 1;
+                case 'W':
+                    c = 1;
                     break;
-                case 'V': c = 2;
+                case 'V':
+                    c = 2;
                     break;
-                case 'N': c = 3;
+                case 'N':
+                    c = 3;
                     break;
-                case 'R': c = 4;
+                case 'R':
+                    c = 4;
                     break;
-                case 'P': c = 5;
+                case 'P':
+                    c = 5;
                     break;
-                case 'G': c = 6;
+                case 'G':
+                    c = 6;
                     break;
-                default: c = -1;
+                default:
+                    c = -1;
                     break;
             }
             if (c != -1) {
-                if (auTourDe->getJetons()[static_cast<Couleur>(c)] != 0) {
-                    auTourDe->enleverJeton(static_cast<Couleur>(c));
-                    sachet.remettreJetonDansSachet(static_cast<Couleur>(c));
+                if (activePlayer->getTokens()[static_cast<Color>(c)] != 0) {
+                    activePlayer->giveToken(static_cast<Color>(c));
+                    bag.returnTokenToBag(static_cast<Color>(c));
                     i++;
                 }
             }
         }
     }
 
-    void Partie::demanderReposerJetonsTerminal(const size_t nb) {
-        char rep = ' ';
-        cout << "Vous possedez plus de 10 jetons. Vous devez en remettre dans le sachet.\n";
+    void Game::discardExcessTokens(size_t nb) {
+        char answer = ' ';
+        cout << "Vous possedez plus de 10 tokens. Vous devez en remettre dans le bag.\n";
         size_t i = 0;
-        int c = -1;
+        int colorID = -1;
         while (i < nb) {
             cout << "Vous devez remettre encore " << nb - i <<
-                    "jetons dans le sachet.\nMerci de saisir le jeton que vous souhaitez remettre par exemple : R pour 1 jeton rouge.\n";
-            cin >> rep;
-            switch (rep) {
-                case 'B': c = 0;
+                 "tokens dans le bag.\nMerci de saisir le token que vous souhaitez remettre par exemple : R pour 1 token red.\n";
+            cin >> answer;
+            switch (answer) {
+                case 'B':
+                    colorID = 0;
                     break;
-                case 'W': c = 1;
+                case 'W':
+                    colorID = 1;
                     break;
-                case 'V': c = 2;
+                case 'V':
+                    colorID = 2;
                     break;
-                case 'N': c = 3;
+                case 'N':
+                    colorID = 3;
                     break;
-                case 'R': c = 4;
+                case 'R':
+                    colorID = 4;
                     break;
-                case 'P': c = 5;
+                case 'P':
+                    colorID = 5;
                     break;
-                case 'G': c = 6;
+                case 'G':
+                    colorID = 6;
                     break;
-                default: c = -1;
+                default:
+                    colorID = -1;
                     break;
             }
-            if (c != -1) {
-                if (auTourDe->getJetons()[static_cast<Couleur>(c)] != 0) {
-                    auTourDe->enleverJeton(static_cast<Couleur>(c));
-                    sachet.remettreJetonDansSachet(static_cast<Couleur>(c));
+            if (colorID != -1) {
+                if (activePlayer->getTokens()[static_cast<Color>(colorID)] != 0) {
+                    activePlayer->giveToken(static_cast<Color>(colorID));
+                    bag.returnTokenToBag(static_cast<Color>(colorID));
                     i++;
                 }
             }
         }
     }
 
-    bool Partie::verifVictoire() const {
-        return auTourDe->cumul10PointsPrestigeCouleur() || auTourDe->getNbCouronnes() >= 10 || auTourDe->
-               getNbPrestiges() >= 20;
+    bool Game::winCheck() const {
+        return activePlayer->hasWonByColorPrestige() || activePlayer->getNbCrowns() >= 10 || activePlayer->
+                getNbPrestiges() >= 20;
     }
 
-    void Partie::prendreUnPrivilege() {
-        if (auTourDe->getNbPrivileges() < 3) {
-            // si le joueur a déjà les 3 privileges, il n'en prend pas
-            if (nbPrivilegesDispos != 0) {
-                auTourDe->ajouterPrivilege();
-                nbPrivilegesDispos--;
+    void Game::takePrivilege() {
+        if (activePlayer->getNbPrivileges() < 3) {
+            // si le Player a déjà les 3 privileges, il n'en prend pas
+            if (nbFreePrivileges != 0) {
+                activePlayer->privilegeAdd();
+                nbFreePrivileges--;
             } else {
-                changeJoueur();
-                auTourDe->retirerPrivilege();
-                changeJoueur();
-                auTourDe->ajouterPrivilege();
+                changePlayer();
+                activePlayer->privilegeRemove();
+                changePlayer();
+                activePlayer->privilegeAdd();
             }
         }
     }
 
-    void Partie::changeJoueur() {
-        if (auTourDe == &joueurs[0]) auTourDe = &joueurs[1];
-        else auTourDe = &joueurs[0];
+    void Game::changePlayer() {
+        if (activePlayer == &players[0]) activePlayer = &players[1];
+        else activePlayer = &players[0];
     }
 
 
-    void Partie::appelCapaciteCarte(const vector<CarteJoaillerie *>& container, const size_t index) {
-        if (container[index]->getCapacite() == Capacite::jeton_adversaire) {
-            if (!auTourDe->isIA()) jetonAdversaire();
-            else jetonAdversaireIA();
+    void Game::cardAbilityActivation(const vector<card::CardJewels *> &container, size_t index) {
+        if (container[index]->getAbility() == Ability::take_opp_token) {
+            if (!activePlayer->isAI()) takeOppToken();
+            else takeOppTokenAI();
         }
-        if (container[index]->getCapacite() == Capacite::prendre_un_jeton) {
-            jetonPlateauCapacite(container[index]->getCouleurReduc());
+        if (container[index]->getAbility() == Ability::take_a_token) {
+            takeTokenFromBoardAbility(container[index]->getDiscountColor());
         }
-        if (container[index]->getCapacite() == Capacite::prendre_un_privilege) {
-            prendreUnPrivilege();
+        if (container[index]->getAbility() == Ability::take_a_privilege) {
+            takePrivilege();
         }
-        if (container[index]->getCapacite() == Capacite::rejouer) {
+        if (container[index]->getAbility() == Ability::play_again) {
             //a discuter mais peut etre changer de autourde la
-            changeJoueur();
+            changePlayer();
         }
     }
 
-    void Partie::jetonAdversaireIA() {
+    void Game::takeOppTokenAI() {
         int i = 0;
-        char rep = ' ';
-        if (auTourDe == &joueurs[0]) {
+        char answer;
+        if (activePlayer == &players[0]) {
             i = 1;
         }
-        if (joueurs[i].getJetons().empty())  {
+        if (players[i].getTokens().empty()) {
             return;
         }
-        vector<char> choixValides = {'B', 'W', 'V', 'N', 'R', 'P'};
+        vector<char> validChoices = {'B', 'W', 'V', 'N', 'R', 'P'};
         random_device dev;
         mt19937 rng(dev());
-        uniform_int_distribution<> dis(0, choixValides.size()-1);
-        rep = choixValides[dis(rng)];
-        Couleur couleurPrise;
-        switch (rep) {
-            case 'B': couleurPrise = Couleur::bleu;
+        uniform_int_distribution<> dis(0, validChoices.size() - 1);
+        answer = validChoices[dis(rng)];
+        Color chosenColor;
+        switch (answer) {
+            case 'B':
+                chosenColor = Color::blue;
                 break;
-            case 'W': couleurPrise = Couleur::blanc;
+            case 'W':
+                chosenColor = Color::white;
                 break;
-            case 'V': couleurPrise = Couleur::vert;
+            case 'V':
+                chosenColor = Color::green;
                 break;
-            case 'N': couleurPrise = Couleur::noir;
+            case 'N':
+                chosenColor = Color::black;
                 break;
-            case 'R': couleurPrise = Couleur::rouge;
+            case 'R':
+                chosenColor = Color::red;
                 break;
-            case 'P': couleurPrise = Couleur::perle;
+            case 'P':
+                chosenColor = Color::pearl;
                 break;
-            default: throw SplendorException("Couleur impossible a choisir");
+            default:
+                throw SplendorException("Couleur impossible a choisir");
         }
-        auTourDe->prendreJeton(couleurPrise);
-        joueurs[i].enleverJeton(couleurPrise);
+        activePlayer->takeToken(chosenColor);
+        players[i].giveToken(chosenColor);
     }
 
 
-    void Partie::jetonAdversaire() {
+    void Game::takeOppToken() {
         int i = 0;
-        char rep = ' ';
-        if (auTourDe == &joueurs[0]) {
+        char answer = ' ';
+        if (activePlayer == &players[0]) {
             i = 1;
         }
-        if (joueurs[i].getJetons().empty())
+        if (players[i].getTokens().empty())
             return;
-        cout << "Choisir la couleur du jeton à prendre parmi ceux de l'adversaire : \n";
-        for (const auto [couleur, nbJetons]: joueurs[i].getJetons()) {
-            if (nbJetons != 0 && couleur != Couleur::gold) {
-                cout << couleur << ", ";
+        cout << "Choisir la color du token à prendre parmi ceux de l'adversaire : \n";
+        for (const auto [color, nbTokens]: players[i].getTokens()) {
+            if (nbTokens != 0 && color != Color::gold) {
+                cout << color << ", ";
             }
         }
         cout << "\n";
-        cin >> rep;
-        Couleur couleurPrise;
-        switch (rep) {
-            case 'B': couleurPrise = Couleur::bleu;
+        cin >> answer;
+        Color chosenColor;
+        switch (answer) {
+            case 'B':
+                chosenColor = Color::blue;
                 break;
-            case 'W': couleurPrise = Couleur::blanc;
+            case 'W':
+                chosenColor = Color::white;
                 break;
-            case 'V': couleurPrise = Couleur::vert;
+            case 'V':
+                chosenColor = Color::green;
                 break;
-            case 'N': couleurPrise = Couleur::noir;
+            case 'N':
+                chosenColor = Color::black;
                 break;
-            case 'R': couleurPrise = Couleur::rouge;
+            case 'R':
+                chosenColor = Color::red;
                 break;
-            case 'P': couleurPrise = Couleur::perle;
+            case 'P':
+                chosenColor = Color::pearl;
                 break;
-            default: throw SplendorException("Couleur impossible a choisir");
+            default:
+                throw SplendorException("Couleur impossible a choisir");
         }
-        auTourDe->prendreJeton(couleurPrise);
-        joueurs[i].enleverJeton(couleurPrise);
+        activePlayer->takeToken(chosenColor);
+        players[i].giveToken(chosenColor);
     }
 
-    void Partie::jetonPlateauCapacite(Couleur c) {
-        bool bienChoisi = false;
-        auto jetons = plateau.getJetons();
+    void Game::takeTokenFromBoardAbility(token::Color color) {
+        bool correctlyChosen = false;
+        auto tokens = board.getTokens();
         if (any_of(
-            jetons.cbegin(),
-            jetons.cend(),
-            [c](const Jeton* jeton) {
-                if (jeton != nullptr) return jeton->getCouleur() == c;
-                return false;
-            }
+                tokens.cbegin(),
+                tokens.cend(),
+                [color](const Token *token) {
+                    if (token != nullptr) return token->getColor() == color;
+                    return false;
+                }
         ))
-            while (!bienChoisi) {
+            while (!correctlyChosen) {
                 int x;
                 int y;
-                if (!auTourDe->isIA()) {
-                    cout << "Vous devez choisir un jeton " << c << ".\n";
-                    const tuple<size_t, size_t> choix = choisirJetons(false, true)[0];
-                    tie(x, y) = choix;
+                if (!activePlayer->isAI()) {
+                    cout << "Vous devez choisir un token " << color << ".\n";
+                    const tuple<size_t, size_t> choice = chooseTokens(false, true)[0];
+                    tie(x, y) = choice;
                 } else {
-                    const tuple<size_t, size_t> choix = choisirJetonsIA(false, true, true, c)[0];
-                    tie(x, y) = choix;
+                    const tuple<size_t, size_t> choice = chooseTokensAI(false, true, true, color)[0];
+                    tie(x, y) = choice;
                 }
-                if (x != -1 && plateau.getJetons()[plateau.getPosition(x, y)]->getCouleur() == c) {
-                    bienChoisi = true;
-                    auTourDe->prendreJeton(c);
-                    plateau.retirerJetons(*plateau.getJetons()[plateau.getPosition(x, y)]);
+                if (x != -1 && board.getTokens()[board.getPosition(x, y)]->getColor() == color) {
+                    correctlyChosen = true;
+                    activePlayer->takeToken(color);
+                    board.removeToken(*board.getTokens()[board.getPosition(x, y)]);
                 } else cout << "Choix invalide, reesayez.\n";
             }
-        else cout << "Il n'y a pas de jetons de la bonne couleur sur le plateau !\n";
+        else cout << "Il n'y a pas de tokens de la bonne color sur le board !\n";
     }
 }

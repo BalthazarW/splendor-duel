@@ -6,29 +6,27 @@
 using namespace std;
 
 namespace splendor_duel {
-    bool fichierMemoireExiste(const filesystem::path& name);
+    bool memoryFileExists(const filesystem::path &path);
 
-    class Controleur {
-        static Controleur* instanceUnique;
-        partie::Partie* partie = nullptr;
+    class Controller {
+        static Controller *uniqueInstance;
+        game::Game *splendorGame = nullptr;
 
-        Controleur() = default;
+        Controller() = default;
 
-        Controleur(const Controleur&) = default;
+        Controller(const Controller &) = default;
 
-        ~Controleur() = default;
+        ~Controller() = default;
 
     public:
-        static Controleur* donneInstance();
+        static Controller *giveInstance();
 
-        static void libereInstance();
+        static void freeInstance();
 
         void start();
 
-        void nouvellePartie();
+        void newGame();
 
-        void partieContinuee();
-
-        void jouerPartie();
+        void continuedGame();
     };
 }

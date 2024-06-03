@@ -14,110 +14,115 @@
 
 using namespace std;
 
-namespace carte {
-    enum class Capacite {
-        rien,
-        rejouer,
-        associe,
-        prendre_un_jeton,
-        prendre_un_privilege,
-        jeton_adversaire,
-        pas_de_carte
+namespace card {
+    enum class Ability {
+        nothing,
+        play_again,
+        associate,
+        take_a_token,
+        take_a_privilege,
+        take_opp_token,
+        no_card
     };
 
-    string toString(const Capacite&);
+    string toString(const Ability &);
 
-    void toStringShort(string&, Capacite, size_t);
+    void toStringShort(string &, Ability, size_t);
 
-    class Carte {
+    class CardRoyals {
     protected:
         size_t prestige;
-        Capacite capacite;
-        filesystem::path nomFichier;
+        Ability ability;
+        filesystem::path filePath;
 
     public:
-        Carte(const size_t prest, const Capacite capa, const string& nf): prestige(prest), capacite(capa),
-                                                                   nomFichier(nf) {}
+        CardRoyals(const size_t prest, const Ability abil, const string &fp) : prestige(prest), ability(abil),
+                                                                               filePath(fp) {}
 
-        virtual ~Carte() = default;
+        virtual ~CardRoyals() = default;
 
         size_t getPrestige() const { return prestige; }
-        Capacite getCapacite() const { return capacite; }
-        filesystem::path getNomFichier(){return nomFichier;}
 
-        virtual void sauvegarderEtat(QXmlStreamWriter& writer) {
+        Ability getAbility() const { return ability; }
+
+        filesystem::path getFilePath() { return filePath; }
+
+        virtual void saveState(QXmlStreamWriter &writer) {
             writer.writeAttribute("prestige", QString::number(prestige));
-            writer.writeAttribute("capacite", QString::number(static_cast<int>(capacite)));
-            writer.writeAttribute("nom_fichier", QString::fromStdString(nomFichier.string()));
+            writer.writeAttribute("ability", QString::number(static_cast<int>(ability)));
+            writer.writeAttribute("file_path", QString::fromStdString(filePath.string()));
         }
 
-        static Carte* chargerEtat(const QXmlStreamReader& reader) {
-            return new Carte(
-                reader.attributes().value("prestige").toULongLong(),
-                static_cast<Capacite>(reader.attributes().value("capacite").toInt()),
-                reader.attributes().value("nom_fichier").toString().toStdString()
+        static CardRoyals *loadState(const QXmlStreamReader &reader) {
+            return new CardRoyals(
+                    reader.attributes().value("prestige").toULongLong(),
+                    static_cast<Ability>(reader.attributes().value("ability").toInt()),
+                    reader.attributes().value("file_path").toString().toStdString()
             );
         }
     };
 
-    class CarteJoaillerie : public Carte {
-        map<jeton::Couleur, size_t>* prix;
-        size_t couronnes;
-        jeton::Couleur couleurReduc;
-        size_t nbReduc = 0;
+    class CardJewels : public CardRoyals {
+        map<token::Color, size_t> *price;
+        size_t crowns;
+        token::Color discountColor;
+        size_t nbDiscount = 0;
 
     public:
-        CarteJoaillerie(const size_t prestige, map<jeton::Couleur, size_t>* prix, const Capacite capacite,
-                        const size_t couronnes,
-                        const jeton::Couleur couleur, const size_t reduc,
-                        const string& nf): Carte(prestige, capacite, nf), prix(prix),
-                                    couronnes(couronnes), couleurReduc(couleur),
-                                    nbReduc(reduc) {}
+        CardJewels(const size_t prestige, map<token::Color, size_t> *price, const Ability ability,
+                   const size_t crowns,
+                   const token::Color color, const size_t discount,
+                   const string &fp) : CardRoyals(prestige, ability, fp), price(price),
+                                       crowns(crowns), discountColor(color),
+                                       nbDiscount(discount) {}
 
-        ~CarteJoaillerie() override = default;
+        ~CardJewels() override = default;
 
-        size_t getCouronnes() const { return couronnes; }
-        const map<jeton::Couleur, size_t>* getPrix() const { return prix; }
-        jeton::Couleur getCouleurReduc() const { return couleurReduc; }
-        size_t getNbReduc() const { return nbReduc; }
+        size_t getCrowns() const { return crowns; }
 
-        void setCouleurReduc(const jeton::Couleur nouvelleCouleur) {
-            couleurReduc = nouvelleCouleur;
+        const map<token::Color, size_t> *getPrice() const { return price; }
+
+        token::Color getDiscountColor() const { return discountColor; }
+
+        size_t getNbDiscount() const { return nbDiscount; }
+
+        void setDiscountColor(const token::Color newColor) {
+            discountColor = newColor;
         }
 
-        void sauvegarderEtat(QXmlStreamWriter& writer) override {
-            Carte::sauvegarderEtat(writer);
-            writer.writeAttribute("couronnes", QString::number(couronnes));
-            writer.writeAttribute("couleur_reduc", QString::number(static_cast<int>(couleurReduc)));
-            writer.writeAttribute("nb_reduc", QString::number(nbReduc));
-            writer.writeStartElement("prix");
-            sauvegarderCompteJetons(*prix, writer);
+        void saveState(QXmlStreamWriter &writer) override {
+            CardRoyals::saveState(writer);
+            writer.writeAttribute("crowns", QString::number(crowns));
+            writer.writeAttribute("discount_color", QString::number(static_cast<int>(discountColor)));
+            writer.writeAttribute("nb_discount", QString::number(nbDiscount));
+            writer.writeStartElement("price");
+            saveTokens(*price, writer);
         }
 
-        static CarteJoaillerie* chargerEtat(QXmlStreamReader& reader) {
+        static CardJewels *loadState(QXmlStreamReader &reader) {
             const size_t prestige = reader.attributes().value("prestige").toULongLong();
-            const auto capa = static_cast<Capacite>(reader.attributes().value("capacite").toInt());
-            const string nomFichier = reader.attributes().value("nom_fichier").toString().toStdString();
-            const size_t couronnes = reader.attributes().value("couronnes").toULongLong();
-            const size_t nbReduc = reader.attributes().value("nb_reduc").toULongLong();
-            const auto couleurReduc = static_cast<jeton::Couleur>(reader.attributes().value("couleur_reduc").toInt());
-            map<jeton::Couleur, size_t> prix;
+            const auto ability = static_cast<Ability>(reader.attributes().value("ability").toInt());
+            const string filePath = reader.attributes().value("file_path").toString().toStdString();
+            const size_t crowns = reader.attributes().value("crowns").toULongLong();
+            const size_t nbDiscount = reader.attributes().value("nb_discount").toULongLong();
+            const auto discountColor = static_cast<token::Color>(reader.attributes().value("discount_color").toInt());
+            map < token::Color, size_t > price;
             reader.readNextStartElement();
-            if (reader.name().toString() == "prix") {
-                prix = jeton::chargerCompteJetons(reader);
+            if (reader.name().toString() == "price") {
+                price = token::loadTokens(reader);
                 reader.skipCurrentElement();
             }
-            return new CarteJoaillerie(prestige, new map(prix), capa, couronnes, couleurReduc, nbReduc, nomFichier);
+            return new CardJewels(prestige, new map(price), ability, crowns, discountColor, nbDiscount, filePath);
         }
     };
 
-    void sauvegarderEtatPioche(const vector<CarteJoaillerie *>&, const QString&);
+    void saveJewelsStack(const vector<CardJewels *> &, const QString &);
 
-    void sauvegarderEtatPioche(const vector<Carte *>&, const QString&);
+    void saveRoyalsStack(const vector<CardRoyals *> &, const QString &);
 
-    vector<CarteJoaillerie *> chargerEtatPiocheJ(const QString&);
+    vector<CardJewels *> loadJewelsStack(const QString &);
 
-    vector<Carte *> chargerEtatPioche(const QString&);
+    vector<CardRoyals *> loadRoyalsStack(const QString &);
 
-    ostream& operator<<(ostream& f, Capacite c);
+    ostream &operator<<(ostream &f, Ability a);
 }

@@ -1,57 +1,57 @@
 #include "token.h"
 
-namespace jeton {
-    std::initializer_list<Couleur> Couleurs = {
-        Couleur::bleu,
-        Couleur::blanc,
-        Couleur::vert,
-        Couleur::noir,
-        Couleur::rouge,
-        Couleur::perle,
-        Couleur::gold
+namespace token {
+    std::initializer_list<Color> Colors = {
+            Color::blue,
+            Color::white,
+            Color::green,
+            Color::black,
+            Color::red,
+            Color::pearl,
+            Color::gold
     };
 
-    string toString(const Couleur c) {
+    string toString(const Color c) {
         switch (c) {
-            case Couleur::bleu:
+            case Color::blue:
                 return "B";
-            case Couleur::blanc:
+            case Color::white:
                 return "W";
-            case Couleur::vert:
-                return "V";
-            case Couleur::noir:
+            case Color::green:
+                return "G";
+            case Color::black:
                 return "N";
-            case Couleur::rouge:
+            case Color::red:
                 return "R";
-            case Couleur::perle:
+            case Color::pearl:
                 return "P";
-            case Couleur::gold:
+            case Color::gold:
                 return "O";
             default:
-                throw SplendorException("Couleur inconnue");
+                throw SplendorException("Unknown color");
         }
     }
 
-    ostream& operator<<(ostream& f, const Couleur c) {
+    ostream &operator<<(ostream &f, const Color c) {
         f << toString(c);
         return f;
     }
 
-    ostream& operator<<(ostream& f, const Jeton j) {
-        f << j.getCouleur();
+    ostream &operator<<(ostream &f, const Token t) {
+        f << t.getColor();
         return f;
     }
 
-    void sauvegarderCompteJetons(const map<Couleur, size_t>& compte, QXmlStreamWriter& writer) {
-        for (const auto [couleur, nb] : compte) {
+    void saveTokens(const map<Color, size_t> &compte, QXmlStreamWriter &writer) {
+        for (const auto [couleur, nb]: compte) {
             writer.writeAttribute(toString(couleur), QString::number(nb));
         }
         writer.writeEndElement();
     }
 
-    map<Couleur, size_t> chargerCompteJetons(const QXmlStreamReader& reader) {
-        map<Couleur, size_t> nouveauCompte;
-        for (const auto couleur : Couleurs) {
+    map<Color, size_t> loadTokens(const QXmlStreamReader &reader) {
+        map<Color, size_t> nouveauCompte;
+        for (const auto couleur: Colors) {
             if (const auto nbJetons = reader.attributes().value(toString(couleur)).toInt(); nbJetons > 0)
                 nouveauCompte[couleur] = nbJetons;
         }

@@ -11,155 +11,157 @@ using namespace std;
 
 class SplendorDuel;
 
-namespace partie {
+namespace game {
     filesystem::path getBasePath();
 
     void printSpacing(size_t, bool);
 
-    void afficherLigneCartes(const vector<carte::CarteJoaillerie *>&, size_t, bool);
+    void printCardsLine(const vector<card::CardJewels *> &, size_t, bool);
 
-    class Partie {
-        vector<joueur::Joueur> joueurs;
-        joueur::Joueur* auTourDe;
-        size_t actionsOptionnellesAccomplies = 0;
-        plateau::Plateau plateau;
-        plateau::Sachet sachet;
-        size_t nbPrivilegesDispos = 3;
-        vector<carte::CarteJoaillerie *> cartesNv1;
-        vector<carte::CarteJoaillerie *> cartesNv2;
-        vector<carte::CarteJoaillerie *> cartesNv3;
-        vector<carte::Carte *> cartesRoyales;
-        bool fini = false;
+    class Game {
+        vector <player::Player> players;
+        player::Player *activePlayer;
+        size_t optionalActionsDone = 0;
+        board::Board board;
+        board::Bag bag;
+        size_t nbFreePrivileges = 3;
+        vector<card::CardJewels *> cardsLvl1;
+        vector<card::CardJewels *> cardsLvl2;
+        vector<card::CardJewels *> cardsLvl3;
+        vector<card::CardRoyals *> cardsRoyals;
+        bool gameEnded = false;
 
         friend class ::SplendorDuel;
+
     public:
-        Partie(const joueur::Joueur& joueur1, const joueur::Joueur& joueur2, const bool nouvellePartie) {
-            joueurs.push_back(joueur1);
-            joueurs.push_back(joueur2);
-            if (nouvellePartie) {
+        Game(const player::Player &player1, const player::Player &player2, const bool newGame) {
+            players.push_back(player1);
+            players.push_back(player2);
+            if (newGame) {
                 random_device dev;
                 mt19937 rng(dev());
                 uniform_int_distribution<mt19937::result_type> dist2(0, 1);
                 const auto result = dist2(rng);
-                auTourDe = &joueurs[result];
-                plateau.remplirPlateau(sachet);
-                instancierJoaillerie();
-                instancierRoyale();
+                activePlayer = &players[result];
+                board.fillBoard(bag);
+                generateJewels();
+                generateRoyals();
             }
         }
 
-        vector<carte::CarteJoaillerie *> getCartesNv1() const { return cartesNv1; }
-        vector<carte::CarteJoaillerie *> getCartesNv2() const { return cartesNv2; }
-        vector<carte::CarteJoaillerie *> getCartesNv3() const { return cartesNv3; }
-        joueur::Joueur* getauTourDe() const { return auTourDe; }
-        plateau::Sachet getSachet() { return sachet; }
-        vector<joueur::Joueur> getJoueurs(){return joueurs;}
+        vector<card::CardJewels *> getCardsLvl1() const { return cardsLvl1; }
+
+        vector<card::CardJewels *> getCardsLvl2() const { return cardsLvl2; }
+
+        vector<card::CardJewels *> getCardsLvl3() const { return cardsLvl3; }
+
+        player::Player *getActivePlayer() const { return activePlayer; }
+
+        vector <player::Player> getPlayers() { return players; }
 
 
-        bool estFinie() const { return fini; }
+        bool hasEnded() const { return gameEnded; }
 
-        void instancierJoaillerie(const string& = "../data/cards.data");
+        void generateJewels(const string & = "../data/cards.data");
 
-        void instancierRoyale(const string& = "../data/royal_cards.data");
+        void generateRoyals(const string & = "../data/royal_cards.data");
 
-        void afficherPyramide() const {
-            afficherLigneCartes(cartesNv3, 3, true);
-            afficherLigneCartes(cartesNv2, 4, true);
-            afficherLigneCartes(cartesNv1, 5, true);
+        void printPyramid() const {
+            printCardsLine(cardsLvl3, 3, true);
+            printCardsLine(cardsLvl2, 4, true);
+            printCardsLine(cardsLvl1, 5, true);
         }
 
-        void afficherCartesRoyale(const vector<carte::Carte*>&) const;
+        static void printRoyals(const vector<card::CardRoyals *> &cardsList) ;
 
-        void jouer();
+        void play();
 
-        tuple<bool, bool> actionOptionnelle();
+        tuple<bool, bool> actionOptional();
 
-        tuple<bool, bool> actionOptionnelleIA();
+        tuple<bool, bool> actionOptionalAI();
 
-        bool actionObligatoire();
+        bool actionMandatory();
 
-        bool actionObligatoireIA();
+        bool actionMandatoryAI();
 
-        vector<tuple<size_t, size_t>> choisirJetons(bool, bool);
+        vector <tuple<size_t, size_t>> chooseTokens(bool, bool);
 
-        vector<tuple<size_t, size_t>> choisirJetonsIA(bool, bool, bool , jeton::Couleur);
+        vector <tuple<size_t, size_t>> chooseTokensAI(bool, bool, bool, token::Color);
 
-        tuple<vector<carte::CarteJoaillerie *>, size_t> choisirCarte(bool);
+        tuple<vector < card::CardJewels * >, size_t> chooseCardJewels(bool);
 
-        tuple<vector<carte::CarteJoaillerie *>, size_t> choisirCarteIA(bool);
+        tuple<vector < card::CardJewels * >, size_t> chooseCardJewelsAI(bool);
 
-        size_t choisirCarteRoyale() const;
+        size_t chooseCardRoyals() const;
 
-        void utiliserPrivilege(const jeton::Jeton&);
+        void usePrivilege(const token::Token &);
 
-        void prendreJetons(size_t, size_t);
+        void takeToken(size_t, size_t);
 
-        bool peutAcheter(const carte::CarteJoaillerie*) const;
+        bool canBuyJewel(const card::CardJewels *) const;
 
-        bool peutReserver() const;
+        bool canReserveJewel() const;
 
-        void prendreCarteRoyale(size_t);
+        void takeRoyal(size_t);
 
-        void recupererCarte(const vector<carte::CarteJoaillerie *>&, size_t, bool);
+        void takeJewel(const vector<card::CardJewels *> &, size_t, bool);
 
-        void acheterCarteJoaillerie(const vector<carte::CarteJoaillerie *>&, size_t);
+        void buyJewel(const vector<card::CardJewels *> &, size_t);
 
-        bool verifFinTour();
+        bool endOfTurnChecks();
 
-        bool verifVictoire() const;
+        bool winCheck() const;
 
-        void prendreUnPrivilege();
+        void takePrivilege();
 
-        void changeJoueur();
+        void changePlayer();
 
-        void demanderReposerJetonsTerminal(size_t nb);
+        void discardExcessTokens(size_t nb);
 
-        void demanderReposerJetonsTerminalIA(size_t nb);
+        void discardExcessTokensAI(size_t nb);
 
-        void appelCapaciteCarte(const vector<carte::CarteJoaillerie *>& container, size_t index);
+        void cardAbilityActivation(const vector<card::CardJewels *> &container, size_t index);
 
-        void jetonAdversaire();
+        void takeOppToken();
 
-        void jetonAdversaireIA();
+        void takeOppTokenAI();
 
-        void jetonPlateauCapacite(jeton::Couleur c);
+        void takeTokenFromBoardAbility(token::Color token);
 
-        void sauvegarderEtat(const QString& dir = (getBasePath() / "save").string().c_str()) const {
-            QFile file(dir + "/partie.xml");
+        void saveState(const QString &dir = (getBasePath() / "save").string().c_str()) const {
+            QFile file(dir + "/game.xml");
             if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
                 QXmlStreamWriter xmlWriter(&file);
                 xmlWriter.setAutoFormatting(true);
 
-                // Écriture des données dans le fichier XML
                 xmlWriter.writeStartDocument();
-                xmlWriter.writeStartElement("partie");
+                xmlWriter.writeStartElement("game");
 
-                xmlWriter.writeAttribute("nbAcOpt", QString::number(actionsOptionnellesAccomplies));
-                xmlWriter.writeAttribute("nbPrivi", QString::number(nbPrivilegesDispos));
+                xmlWriter.writeAttribute("nbOptionalActions", QString::number(optionalActionsDone));
+                xmlWriter.writeAttribute("nbPrivileges", QString::number(nbFreePrivileges));
                 int i = 0;
-                if (auTourDe != &joueurs[0])
+                if (activePlayer != &players[0])
                     i = 1;
-                xmlWriter.writeAttribute("joueurAct", QString::number(i));
+                xmlWriter.writeAttribute("activePlayer", QString::number(i));
 
                 xmlWriter.writeEndElement();
                 xmlWriter.writeEndDocument();
 
                 file.close();
-                if (QFile fileRoy(dir + "/royales.xml"); fileRoy.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                if (QFile fileRoy(dir + "/royals.xml"); fileRoy.open(QIODevice::WriteOnly | QIODevice::Text)) {
                     QXmlStreamWriter xmlWriter2(&fileRoy);
                     xmlWriter2.setAutoFormatting(true);
 
-                    // Écriture des données dans le fichier XML
                     xmlWriter2.writeStartDocument();
-                    xmlWriter2.writeStartElement("pioche");
+                    xmlWriter2.writeStartElement("deck");
 
-                    for (const auto carte : cartesRoyales) {
-                        if (carte == nullptr) {
-                            xmlWriter2.writeStartElement("carte");
-                            xmlWriter2.writeAttribute("valide", nullptr);
+                    for (const auto card: cardsRoyals) {
+                        if (card == nullptr) {
+                            xmlWriter2.writeStartElement("card");
+                            xmlWriter2.writeAttribute("valid", nullptr);
                             xmlWriter2.writeEndElement();
                         }
-                        // else carte->sauvegarderEtat(xmlWriter);
+                        // else card->saveState(xmlWriter);
                     }
 
                     xmlWriter2.writeEndElement();
@@ -167,26 +169,26 @@ namespace partie {
 
                     file.close();
                 } else {
-                    qDebug() << "Impossible d'ouvrir le fichier pour sauvegarder l'etat de la pioche.";
+                    qDebug() << "Couldn't open the file to save the deck.";
                 }
-                joueurs[0].sauvegarderEtat(dir + "/player1");
-                joueurs[1].sauvegarderEtat(dir + "/player2");
-                plateau.sauvegarderEtat(dir + "/plateau.xml");
-                sachet.sauvegarderEtat(dir + "/sachet.xml");
-                sauvegarderEtatPioche(cartesNv1, dir + "/piocheNv1.xml");
-                sauvegarderEtatPioche(cartesNv2, dir + "/piocheNv2.xml");
-                sauvegarderEtatPioche(cartesNv3, dir + "/piocheNv3.xml");
-                sauvegarderEtatPioche(cartesRoyales, dir + "/royales.xml");
+                players[0].saveState(dir + "/player1");
+                players[1].saveState(dir + "/player2");
+                board.saveState(dir + "/board.xml");
+                bag.saveState(dir + "/bag.xml");
+                saveJewelsStack(cardsLvl1, dir + "/deckLvl1.xml");
+                saveJewelsStack(cardsLvl2, dir + "/deckLvl2.xml");
+                saveJewelsStack(cardsLvl3, dir + "/deckLvl3.xml");
+                saveRoyalsStack(cardsRoyals, dir + "/royals.xml");
             } else {
-                qDebug() << "Impossible d'ouvrir le fichier pour sauvegarder l'etat de la partie.";
+                qDebug() << "Couldn't open the file to save the game state.";
             }
         }
 
-        static Partie* chargerEtat(const QString& dir = (getBasePath() / "save").string().c_str()) {
-            joueur::Joueur joueur1 = joueur::Joueur::chargerEtat(dir + "/player1");
-            joueur::Joueur joueur2 = joueur::Joueur::chargerEtat(dir + "/player2");
-            auto nouvellePartie = new Partie(joueur1, joueur2, false);
-            QFile file(dir + "/partie.xml");
+        static Game *loadState(const QString &dir = (getBasePath() / "save").string().c_str()) {
+            player::Player player1 = player::Player::loadState(dir + "/player1");
+            player::Player player2 = player::Player::loadState(dir + "/player2");
+            auto newGame = new Game(player1, player2, false);
+            QFile file(dir + "/game.xml");
             if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 QXmlStreamReader xmlReader(&file);
 
@@ -196,42 +198,35 @@ namespace partie {
                     if (token == QXmlStreamReader::StartDocument) {
                         continue;
                     }
-                    if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "partie") {
-                        nouvellePartie->actionsOptionnellesAccomplies = xmlReader.attributes().value("nbAcOpt").toInt();
-                        nouvellePartie->nbPrivilegesDispos = xmlReader.attributes().value("nbPrivi").toInt();
-                        nouvellePartie->auTourDe = &nouvellePartie->joueurs[xmlReader.attributes().value("joueurAct").toInt()];
+                    if (token == QXmlStreamReader::StartElement && xmlReader.name().toString() == "game") {
+                        newGame->optionalActionsDone = xmlReader.attributes().value("nbOptionalActions").toInt();
+                        newGame->nbFreePrivileges = xmlReader.attributes().value("nbPrivileges").toInt();
+                        newGame->activePlayer = &newGame->players[xmlReader.attributes().value(
+                                "activePlayer").toInt()];
 
                         xmlReader.skipCurrentElement();
                     }
                 }
                 file.close();
-                nouvellePartie->cartesNv1 = carte::chargerEtatPiocheJ(dir + "/piocheNv1.xml");
-                nouvellePartie->cartesNv2 = carte::chargerEtatPiocheJ(dir + "/piocheNv2.xml");
-                nouvellePartie->cartesNv3 = carte::chargerEtatPiocheJ(dir + "/piocheNv3.xml");
-                nouvellePartie->cartesRoyales = carte::chargerEtatPioche(dir + "/royales.xml");
-                nouvellePartie->plateau.chargerEtat(dir + "/plateau.xml");
-                nouvellePartie->sachet.chargerEtat(dir + "/sachet.xml");
-                return nouvellePartie;
+                newGame->cardsLvl1 = card::loadJewelsStack(dir + "/deckLvl1.xml");
+                newGame->cardsLvl2 = card::loadJewelsStack(dir + "/deckLvl2.xml");
+                newGame->cardsLvl3 = card::loadJewelsStack(dir + "/deckLvl3.xml");
+                newGame->cardsRoyals = card::loadRoyalsStack(dir + "/royals.xml");
+                newGame->board.loadState(dir + "/board.xml");
+                newGame->bag.loadState(dir + "/bag.xml");
+                return newGame;
             }
-            qDebug() << "Impossible d'ouvrir le fichier pour charger l'etat de la partie.";
-            throw jeton::SplendorException("Impossible de charger la partie");
+            qDebug() << "Couldn't open the file to load the game state.";
+            throw token::SplendorException("Loading failed");
         }
     };
 
-    bool verifCoord(const vector<tuple<size_t, size_t>>&, size_t, size_t, size_t);
+    double distance(const tuple<size_t, size_t> &, const tuple<size_t, size_t> &);
 
-    double distance(const tuple<size_t, size_t>&, const tuple<size_t, size_t>&);
+    bool checkProximity(const vector<tuple<size_t, size_t>> &choice);
 
-    bool verifProxi(const vector<tuple<size_t, size_t>>&);
+    bool checkCollinearity(const vector<tuple<size_t, size_t>> &choice);
 
-    bool verifColineaire(const vector<tuple<size_t, size_t>>&);
-
-    bool verifNbCouleurs(map<jeton::Couleur, int>);
-
-    double distance(const tuple<size_t, size_t>&, const tuple<size_t, size_t>&);
-
-    bool verifProxi(const vector<tuple<size_t, size_t>>&);
-
-    bool verifColineaire(const vector<tuple<size_t, size_t>>&);
+    bool checkNbColors(const map<token::Color, int>& tokens);
 
 }

@@ -13,164 +13,176 @@
 #include "player.h"
 #include "game.h"
 
-class CarteWidget : public QLabel {
+class CardWidget : public QLabel {
 Q_OBJECT
 
 public:
-    CarteWidget(carte::CarteJoaillerie* carte, QWidget* parent = nullptr)
-            : QLabel(parent), carte_(carte) {
-    if (carte)
-        image =initUI(carte->getNomFichier());
+    explicit CardWidget(card::CardJewels *card, QWidget *parent = nullptr)
+            : QLabel(parent), pCard(card) {
+        if (card)
+            pImage = initUI(card->getFilePath());
     }
 
-    ~CarteWidget() {
-        delete carte_;
+    ~CardWidget() override {
+        delete pCard;
     }
 
-    QLabel* initUI(const filesystem::path&);
-    carte::CarteJoaillerie* getCarte() {return carte_;}
-    QLabel* getImage(){ return image;};
+    static QLabel *initUI(const filesystem::path &path);
+
+    card::CardJewels *getCard() { return pCard; }
+
+    QLabel *getImage() { return pImage; };
 
 private:
-    carte::CarteJoaillerie* carte_;
-    QLabel* image;
+    card::CardJewels *pCard;
+    QLabel *pImage;
 
 };
 
 
-class JoueurWidget : public QLabel {
+class PlayerWidget : public QLabel {
 Q_OBJECT
 
-public:
-    JoueurWidget(joueur::Joueur* j, QWidget* parent = nullptr)
-            : QLabel(parent), joueur_(j),nombreCartesReservees(0) {
-        initialiserPointsCouronne();
-
-        fenetreCartesAchetees = new QDialog(this);
-        fenetreCartesAchetees->setWindowTitle("Cartes Achetées");
-
-        QVBoxLayout *layoutVertical = new QVBoxLayout(fenetreCartesAchetees);
-        gridLayoutCartesAchetees = new QGridLayout;
-        layoutVertical->addLayout(gridLayoutCartesAchetees);
-        fenetreCartesReservees = new QDialog(this);
-        fenetreCartesReservees->setWindowTitle("Cartes Reservées");
-        QVBoxLayout *layout = new QVBoxLayout(fenetreCartesReservees);
-        gridLayoutCartesReservees = new QGridLayout;
-        layout->addLayout(gridLayoutCartesReservees);
-    }
-
-    ~JoueurWidget() {
-        delete joueur_;
-    }
-    joueur::Joueur* getJoueur() const {
-        return joueur_;
-    }
-    const QMap<QString, int>& getPointsCouronne() const {
-        return pointsCouronne;
-    }
-    void setPointsCouronne(const QString& key, int value) {
-        pointsCouronne[key] = value;
-    }
-    QDialog* getFenetreCartesAchetees() const {
-        return fenetreCartesAchetees;
-    }
-    QDialog* getFenetreCartesReservees() const {
-        return fenetreCartesReservees;
-    }
-    void setFenetreCartesAchetees(QDialog* newFenetreCartesAchetees) {
-        fenetreCartesAchetees = newFenetreCartesAchetees;
-    }
-    QGridLayout* getGridLayoutCartesAchetees() const {
-        return gridLayoutCartesAchetees;
-    }
-    QGridLayout* getGridLayoutCartesReservees() const {
-        return gridLayoutCartesReservees;
-    }
-    void setGridLayoutCartesAchetees(QGridLayout* newGridLayoutCartesAchetees) {
-        gridLayoutCartesAchetees = newGridLayoutCartesAchetees;
-    }
-    void initialiserPointsCouronne();
-
-    int getNombreCartesReservees(){return nombreCartesReservees;}
-    void setNombreCartesReservees(int i){nombreCartesReservees=i;}
-
 private:
-    joueur::Joueur* joueur_;
-    QMap<QString, int> pointsCouronne;
-    QDialog *fenetreCartesAchetees;
-    QDialog *fenetreCartesReservees;
-    QGridLayout *gridLayoutCartesAchetees;
-    QGridLayout *gridLayoutCartesReservees;
-    int nombreCartesReservees;
-};
+    player::Player *pPlayer;
+    QMap<QString, int> crownPoints;
+    QDialog *windowBoughtCards;
+    QDialog *windowReservedCards;
+    QGridLayout *gridLayoutBoughtCards;
+    QGridLayout *gridLayoutReservedCards;
+public:
+    explicit PlayerWidget(player::Player *player, QWidget *parent = nullptr)
+            : QLabel(parent), pPlayer(player) {
+        initCrownPoints();
 
+        windowBoughtCards = new QDialog(this);
+        windowBoughtCards->setWindowTitle("Cartes Achetées");
+
+        auto *layoutVertical = new QVBoxLayout(windowBoughtCards);
+        gridLayoutBoughtCards = new QGridLayout;
+        layoutVertical->addLayout(gridLayoutBoughtCards);
+        windowReservedCards = new QDialog(this);
+        windowReservedCards->setWindowTitle("Cartes Reservées");
+        auto *layout = new QVBoxLayout(windowReservedCards);
+        gridLayoutReservedCards = new QGridLayout;
+        layout->addLayout(gridLayoutReservedCards);
+    }
+
+    ~PlayerWidget() override {
+        delete pPlayer;
+    }
+
+    const QMap<QString, int> &getCrownPoints() const {
+        return crownPoints;
+    }
+
+    void setCrownPoints(const QString &key, int value) {
+        crownPoints[key] = value;
+    }
+
+    QDialog *getWindowBoughtCards() const {
+        return windowBoughtCards;
+    }
+
+    QDialog *getWindowReservedCards() const {
+        return windowReservedCards;
+    }
+
+    QGridLayout *getGridLayoutBoughtCards() const {
+        return gridLayoutBoughtCards;
+    }
+
+    QGridLayout *getGridLayoutReservedCards() const {
+        return gridLayoutReservedCards;
+    }
+
+    void initCrownPoints();
+};
 
 
 class SplendorDuel : public QWidget {
 Q_OBJECT
 
-public:
-    SplendorDuel(QWidget *parent = nullptr);
-    void updateJetonsJoueur();
-    void boutonClique(int row, int col, QPushButton *button);
-    void reserverCarte(CarteWidget *c, const vector<carte::CarteJoaillerie*> &container, int index);
-    void acheterCarte(CarteWidget* c, const vector<carte::CarteJoaillerie*> &container, int index);
-    bool appelCapaciteCarte(CarteWidget*);
-    jeton::Couleur choixParmiCouleurs(const vector<QString>&, const string&, const string&);
-    void choisirCouleurBonus(const vector<carte::CarteJoaillerie *>&, size_t);
-    void piocheClique();
-    QGridLayout* createGridCartesJoueur();
-    QGridLayout* createGridCartesRoyales();
-    void initPlateau(bool = false);
-    void initJetonsCoursAchat();
-    void setupUI();
-
-    void changementJoueur();
-    void verifFinTour();
-    bool verifVictoire();
-
-    void replacerJeton(QPushButton*, QPushButton*);
-    void acheterJetonsEnAttente();
-
-    void createPyramide();
-    void updatePyramide();
-
-    void prendreUnJeton(const string&, bool);
-
-    void lancerIA();
-
-    ~SplendorDuel() { if (mypartie) {
-        if (!mypartie->fini)
-            mypartie->sauvegarderEtat();
-    }
-    }
-
 private:
     QGridLayout *mainLayout;
-    QGridLayout *layoutJetons;
-    QGridLayout *jetonsEnAttente;
-    vector<tuple<size_t, size_t>> coordsJetonsEnAttente;
-    bool jetonBonus = false;
-    jeton::Couleur couleurAPrendre = jeton::Couleur::perle;
-    QGridLayout *plateauJetons;
+    QGridLayout *layoutTokens;
+    QGridLayout *pendingTokens;
+    vector<tuple<size_t, size_t>> coordsPendingTokens;
+    bool bonusToken = false;
+    token::Color colorToTake = token::Color::pearl;
+    QGridLayout *boardTokens;
     QGridLayout *gridLayout2;
     QGridLayout *gridLayout3;
-    partie::Partie* mypartie=nullptr;
-    QMap<QString, QLabel*> labelsJoueurs;
-    size_t compteur_action_obligatoire;
+    game::Game *pGame = nullptr;
+    QMap<QString, QLabel *> labelsPlayers;
+    size_t countMandatoryActions;
     QLabel *labelPrestige;
-    QLabel *labelCouronne;
-    QLabel *labelCapacite;
-    QLabel *labelReduction;
-    JoueurWidget* auTourDe_;
-    vector <JoueurWidget*> joueurs;
-    QDialog *fenetreCartesRoyales;
-    QGridLayout *gridLayoutCartesRoyales;
-
-
+    QLabel *labelCrowns;
+    QLabel *labelDiscount;
+    PlayerWidget *activePlayer;
+    vector<PlayerWidget *> players;
+    QDialog *windowRoyalCards;
+    QGridLayout *gridLayoutRoyalsCards;
 private slots:
-    void afficherFenetreCartesAchetees();
-    void afficherFenetreCartesReservees();
-    void afficherFenetreCartesRoyales();
+
+    void showWindowBoughtCards();
+
+    void showWindowReservedCards();
+
+    void showWindowRoyalsCards();
+
+public:
+    explicit SplendorDuel(QWidget *parent = nullptr);
+
+    void updatePlayerTokens();
+
+    void clickTokenButton(int row, int col, QPushButton *clickedButton);
+
+    void reserveCard(CardWidget *widgetCard, const vector<card::CardJewels *> &container, int index);
+
+    void buyCard(CardWidget *widgetCard, const vector<card::CardJewels *> &container, int index);
+
+    bool activateCardAbility(CardWidget *card);
+
+    token::Color chooseBetweenColors(const vector<QString> &validChoices, const string &title, const string &text);
+
+    void chooseBonusColor(const vector<card::CardJewels *> &container, size_t index);
+
+    void clickDeck();
+
+    QGridLayout *createGridPlayerCards();
+
+    QGridLayout *createGridRoyalsCards();
+
+    void initBoard(bool gold = false);
+
+    void initPendingTokens();
+
+    void setupUI();
+
+    void switchPlayers();
+
+    void checkEndOfTurn();
+
+    bool checkWin();
+
+    static void putBackToken(QPushButton *buttonSelected, QPushButton *buttonBoard);
+
+    void takePendingTokens();
+
+    void createPyramid();
+
+    void updatePyramid();
+
+    void takeOneToken(const string &title, bool gold);
+
+    void startAI();
+
+    ~SplendorDuel() override {
+        if (pGame) {
+            if (!pGame->gameEnded)
+                pGame->saveState();
+        }
+    }
 };
 
