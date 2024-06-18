@@ -58,7 +58,7 @@ namespace splendor_duel {
             while (true) {
                 if (cin >> choice && find(validChoices.cbegin(), validChoices.cend(), choice) != validChoices.cend())
                     break;
-                cout << "Choix invalide, reessayez :\n";
+                cout << "Choix invalide, reessayez:\n";
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
@@ -68,12 +68,12 @@ namespace splendor_duel {
             }
             int choiceAI = 0;
             if (choice != 2) {
-                cout << "\nNiveau de l'IA : \n1: niveau 1 (aleatoire)\n0: Annuler\n";
+                cout << "\nNiveau de l'IA: \n1: niveau 1 (aleatoire)\n0: Annuler\n";
                 const vector validChoicesAI{1};
                 while (true) {
                     if (cin >> choiceAI && find(validChoicesAI.begin(), validChoicesAI.end(), choiceAI) != validChoicesAI.end())
                         break;
-                    cout << "Choix invalide, reessayez :\n";
+                    cout << "Choix invalide, reessayez:\n";
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 }
@@ -87,12 +87,12 @@ namespace splendor_duel {
             player::Player player1(namePlayer1, true, choiceAI);
             player::Player player2(namePlayer2, true, choiceAI);
             if (choice != 3) {
-                cout << "Nom du Player 1 (sans espaces) :";
+                cout << "Nom du Player 1 (sans espaces):";
                 cin >> namePlayer1;
                 player1 = player::Player(namePlayer1, false);
             }
             if (choice == 2) {
-                cout << "Nom du Player 2 (sans espaces) :";
+                cout << "Nom du Player 2 (sans espaces):";
                 cin >> namePlayer2;
                 player2 = player::Player(namePlayer2, false);
             }

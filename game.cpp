@@ -99,7 +99,7 @@ namespace game {
     void whichColor(const vector<CardJewels *> &container, const size_t index) {
 
         char answer = ' ';
-        cout << "Choose the color of your bonus. Example : R for red. Reminder: N for black\n";
+        cout << "Choose the color of your bonus. Example: R for red. Reminder: N for black\n";
         cin >> answer;
         switch (answer) {
             case 'B':
@@ -108,7 +108,7 @@ namespace game {
             case 'W':
                 container[index]->setDiscountColor(Color::white);
                 break;
-            case 'V':
+            case 'G':
                 container[index]->setDiscountColor(Color::green);
                 break;
             case 'N':
@@ -123,7 +123,7 @@ namespace game {
     }
 
     void whichColorAI(const vector<CardJewels *> &container, const size_t index) {
-        vector<char> validChoices = {'B', 'W', 'V', 'N', 'R'};
+        vector<char> validChoices = {'B', 'W', 'G', 'N', 'R'};
         random_device dev;
         mt19937 rng(dev());
         uniform_int_distribution<> dis(0, validChoices.size() - 1);
@@ -273,57 +273,57 @@ namespace game {
     void Game::play() {
         bool hasWon = false;
         while (!hasWon) {
-            cout << "Au tour de " << activePlayer->getName() << "\n";
+            cout << activePlayer->getName() << "'s turn" << "\n";
             printPyramid();
-            cout << "Board :\n";
+            cout << "Board:\n";
             board.displayBoard();
-            cout << "\nCartes achetees par le Player :\n";
+            cout << "\nPlayer's Jewel cards:\n";
             if (!activePlayer->getCardsJewels().empty())
                 printCardsLine(activePlayer->getCardsJewels(), activePlayer->getCardsJewels().size(), false);
-            cout << "CardRoyals(s) royale(s) du Player :\n";
+            cout << "Player's Royal cards:\n";
             if (!activePlayer->getCardsRoyals().empty())
                 printRoyals(activePlayer->getCardsRoyals());
-            cout << "Reserve du Player :\n";
+            cout << "Player's reserve:\n";
             if (!activePlayer->getReserve().empty())
                 printCardsLine(activePlayer->getReserve(), activePlayer->getReserve().size(), false);
-            cout << "Jetons : ";
-            for (const auto [couleur, nb]: (activePlayer->getTokens())) {
-                cout << nb << couleur << " ";
+            cout << "Player's tokens: ";
+            for (const auto [color, nb]: (activePlayer->getTokens())) {
+                cout << nb << color << " ";
             }
-            cout << "\nNombre de Privilege : " << activePlayer->getNbPrivileges() << "\n";
+            cout << "\nPrivilege(s) held: " << activePlayer->getNbPrivileges() << "\n";
 
             if (!activePlayer->isAI()) {
-                bool continuer = true;
-                bool quitter = false;
-                while (optionalActionsDone < 2 && continuer) {
-                    tie(continuer, quitter) = actionOptional();
-                    if (quitter && !continuer)
+                bool continueGame = true;
+                bool quitGame = false;
+                while (optionalActionsDone < 2 && continueGame) {
+                    tie(continueGame, quitGame) = actionOptional();
+                    if (quitGame && !continueGame)
                         return;
-                    if (!quitter || !continuer)
+                    if (!quitGame || !continueGame)
                         optionalActionsDone++;
                 }
-                continuer = false;
-                continuer = actionMandatory();
-                if (!continuer) {
-                    return; // pour ne pas changer 2 fois de Player
+                continueGame = false;
+                continueGame = actionMandatory();
+                if (!continueGame) {
+                    return; // to not change player twice
                 }
                 optionalActionsDone = 0;
             } else if (activePlayer->getAILevel() == 1) {
-                bool continuer = true;
-                bool quitter = false;
+                bool continueGame = true;
+                bool quitGame = false;
                 size_t k = 0;
-                while (optionalActionsDone < 2 && continuer) {
+                while (optionalActionsDone < 2 && continueGame) {
                     k++;
-                    tie(continuer, quitter) = actionOptionalAI();
-                    if (quitter && !continuer)
+                    tie(continueGame, quitGame) = actionOptionalAI();
+                    if (quitGame && !continueGame)
                         return;
-                    if (!quitter || !continuer)
+                    if (!quitGame || !continueGame)
                         optionalActionsDone++;
                 }
-                continuer = false;
-                continuer = actionMandatoryAI();
-                if (!continuer) {
-                    return; // pour ne pas changer 2 fois de Player
+                continueGame = false;
+                continueGame = actionMandatoryAI();
+                if (!continueGame) {
+                    return;
                 }
                 optionalActionsDone = 0;
             }
@@ -334,33 +334,33 @@ namespace game {
                 cout << "\n";
         }
         gameEnded = true;
-        cout << "Le Player " << activePlayer->getName() << " a gagne ! Bien joue !";
+        cout << "Player " << activePlayer->getName() << " has won ! Well played !";
     }
 
     tuple<bool, bool> Game::actionOptional() {
         int choice = 0;
         vector validChoices{0, 3};
-        cout << "Actions possibles:\n";
+        cout << "Possible actions:\n";
         if (activePlayer->getNbPrivileges() > 0) {
-            cout << "1 : Utiliser un ou plusieurs privileges\n";
+            cout << "1: Use one or multiple Privileges\n";
             validChoices.push_back(1);
         }
         if (bag.getNbTokens() > 0) {
-            cout << "2 : Remplir le board\n";
+            cout << "2: Refill the board\n";
             validChoices.push_back(2);
         }
-        cout << "3 : Accomplir une action obligatoire\n0 : Quitter\n";
+        cout << "3: Skip to mandatory actions\n0: Quit\n";
         while (true) {
             if (cin >> choice && find(validChoices.cbegin(), validChoices.cend(), choice) != validChoices.cend())
                 break;
 
-            cout << "Choix invalide, reessayez :\n";
+            cout << "Invalid choice, try again:\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
         if (choice == 1) {
             int res = 0;
-            while (cout << "Merci de saisir un le nombre de privilèges à utiliser :\n" && !(cin >> res) && res <= 0 &&
+            while (cout << "How many Privileges do you want to use? \n" && !(cin >> res) && res <= 0 &&
                    res > activePlayer->getNbPrivileges()) {
                 cin.clear();
             }
@@ -441,8 +441,8 @@ namespace game {
             mt19937 rng(dev());
             uniform_int_distribution<> dis(0, validChoices.size() - 1);
             choice = validChoices[dis(rng)];
-        } // toujours pour rester léger en mémoire (c'est marginal mais quand meme)
-        bool hasChosen = false; // nous permet de vérifier si le Player a annulé on non
+        }
+        bool hasChosen = false;
         if (choice == 1) {
             const auto chosenTokens = chooseTokensAI(false, false, false, Color::blue);
             for (const auto coords: chosenTokens) {
@@ -461,7 +461,7 @@ namespace game {
                 if (container[index]->getDiscountColor() == Color::pearl)
                     whichColorAI(container, index);
                 buyJewel(container, index);
-                // Choix de la card Royale si plus de 3 crowns
+                // Choose Royal card if more than 3 crowns
                 if (activePlayer->getNbCrowns() >= 3 && activePlayer->getCardsRoyals().size() < 2) {
                     random_device dev;
                     mt19937 rng(dev());
@@ -484,7 +484,7 @@ namespace game {
                 }
                 takeJewel(container, index, false);
                 auto [x, y] = chosenTokens[0];
-                takeToken(x, y); //prendre le token Or apres avoir réservé la card;
+                takeToken(x, y);
             } else
                 return actionMandatoryAI();
             return hasChosen;
@@ -496,24 +496,24 @@ namespace game {
         int choice = 0;
         {
             vector validChoices{0, 1, 2};
-            cout << "Actions possibles:\n";
-            cout << "1: Prendre jusqu'a 3 tokens Gemme et/ou Perle\n";
-            cout << "2: Acheter 1 card Joaillerie (de la pyramide ou deja reservee)\n";
+            cout << "Possible actions:\n";
+            cout << "1: Take up to 3 tokens (gems and/or pearls)\n";
+            cout << "2: Buy a Jewel card (from the pyramid or your reserve)\n";
             if (canReserveJewel()) {
-                cout << "3: Reserver une card Joaillerie\n";
+                cout << "3: Reserve a Jewel card\n";
                 validChoices.push_back(3);
             }
-            cout << "0: Quitter\n";
+            cout << "0: Quit\n";
             while (true) {
                 if (cin >> choice && choice >= 0 && choice <= 3 &&
                     find(validChoices.cbegin(), validChoices.cend(), choice) != validChoices.cend())
                     break;
-                cout << "Choix invalide, reessayez :\n";
+                cout << "Invalid choice, try again:\n";
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
-        } // toujours pour rester léger en mémoire (c'est marginal mais quand meme)
-        bool hasChosen = false; // nous permet de vérifier si le Player a annulé on non
+        }
+        bool hasChosen = false;
         if (choice == 1) {
             const auto chosenTokens = chooseTokens(false, false);
             for (const auto coords: chosenTokens) {
@@ -532,7 +532,6 @@ namespace game {
                 if (container[index]->getDiscountColor() == Color::pearl)
                     whichColor(container, index);
                 buyJewel(container, index);
-                // Choix de la card Royale si plus de 3 crowns
                 if (activePlayer->getNbCrowns() >= 3 && activePlayer->getCardsRoyals().size() < 2) {
                     takeRoyal(chooseCardRoyals());
                     activePlayer->crownRemove(3);
@@ -551,7 +550,7 @@ namespace game {
                     return actionMandatory();
                 takeJewel(container, index, false);
                 auto [x, y] = chosenTokens[0];
-                takeToken(x, y); //prendre le token Or apres avoir réservé la card;
+                takeToken(x, y);
             } else
                 return actionMandatory();
             return hasChosen;
@@ -633,11 +632,13 @@ namespace game {
             if (i == nbTokenTaken) break;
         }
         if (!onlyOneToken && checkNbColors(nbByColor)) {
-            cout << "L'IA a pris 3 tokens de la meme color ou\n"
-                    "2 tokens Perle avec cette action, votre prenez donc 1 Privilege.\n";
+            string aiName = activePlayer->getName();
             changePlayer();
+            string oppName = activePlayer->getName();
             takePrivilege();
             changePlayer();
+            cout << aiName << " has taken 3 tokens of the same color or 2 Pearl tokens, "
+            << oppName << " receives 1 Privilege.\n";
         }
         return choice;
     }
@@ -649,10 +650,10 @@ namespace game {
         int answer = 1;
         if (!canTakeGold) {
             if (!onlyOneToken) {
-                cout << "Combien de tokens voulez-vous prendre ?\n";
+                cout << "How many tokens do you want to take?\n";
                 answer = -1;
                 while (answer <= 0 || answer > 3) {
-                    cout << "Merci de saisir un entier entre 1 et 3 (0 pour quitter le mode) :\n";
+                    cout << "Please enter a number between 1 and 3 (enter 0 to cancel):\n";
                     if (cin >> answer && answer == 0) return choice;
                     cin.clear();
                     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -660,15 +661,15 @@ namespace game {
             } else {
                 answer = 1;
             }
-            cout << "Vous ne devez pas prendre de token Or.\n";
-        } else cout << "Vous devez prendre un token Or sur le board\n";
+            cout << "You cannot take a Gold token.\n";
+        } else cout << "You need to take a Gold token from the board.\n";
         int i = 0;
         int x = -1;
         int y = -1;
         while (i < answer) {
-            cout << "Saisie pour le token numero : " << i + 1 << "\n";
+            cout << "Token number: " << i + 1 << "\n";
             while (x <= 0 || x > 5) {
-                cout << "Merci de saisir le numero de ligne entre 1 et 5 (0 pour quitter le mode) :\n";
+                cout << "Please enter a line number between 1 and 5 (enter 0 to cancel):\n";
                 if (cin >> x && x == 0) {
                     choice.clear();
                     return choice;
@@ -677,7 +678,7 @@ namespace game {
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
             while (y <= 0 || y > 5) {
-                cout << "Merci de saisir le numero de colonne entre 1 et 5 (0 pour quitter le mode) :\n";
+                cout << "Please enter a column number between 1 and 5 (enter 0 to cancel):\n";
                 if (cin >> y && y == 0) {
                     choice.clear();
                     return choice;
@@ -689,10 +690,10 @@ namespace game {
             y--;
             if (board.getTokens()[board.getPosition(x, y)] != nullptr) {
                 if (!canTakeGold && board.getTokens()[board.getPosition(x, y)]->getColor() == Color::gold) {
-                    cout << "Vous ne pouvez pas prendre de token Or.\n";
+                    cout << "You cannot take a Gold token.\n";
                 } else if (canTakeGold && board.getTokens()[board.getPosition(x, y)]->getColor() !=
                                           Color::gold) {
-                    cout << "Vous devez prendre un token Or\n";
+                    cout << "You need to take a Gold token.\n";
                 } else {
                     if (i == 0) {
                         choice.emplace_back(x, y);
@@ -703,8 +704,7 @@ namespace game {
                             i++;
                         } else {
                             choice.pop_back();
-                            cout <<
-                                 "Les coordonnees ne sont pas correctes.\nMerci de recommencer la saisie de ce token.\n";
+                            cout << "Invalid coordinates. Please try again.\n";
                         }
                     }
                     nbByColor[board.getTokens()[board.getPosition(x, y)]->getColor()] += 1;
@@ -714,11 +714,13 @@ namespace game {
             y = -1;
         }
         if (!onlyOneToken && checkNbColors(nbByColor)) {
-            cout << "Vous avez pris 3 tokens de la meme color ou\n"
-                    "les 2 tokens Perle avec cette action, votre adversaire prend donc 1 Privilege.\n";
+            string playerName = activePlayer->getName();
             changePlayer();
+            string oppName = activePlayer->getName();
             takePrivilege();
             changePlayer();
+            cout << playerName << " has taken 3 tokens of the same color or 2 Pearl tokens, "
+                 << oppName << " receives 1 Privilege.\n";
         }
         return choice;
     }
@@ -769,7 +771,7 @@ namespace game {
         if (choice.size() == 1)
             return true;
         if (choice.size() == 2)
-            return distance(choice[0], choice[1]) < 2; // si 2, trop loin. en digonale, dist = racine de 2
+            return distance(choice[0], choice[1]) < 2;
         if (choice.size() == 3) {
             int nbCloseTokens = 0;
             for (int i = 0; i < 3; i++) {
@@ -779,12 +781,12 @@ namespace game {
             }
             return nbCloseTokens == 2;
         }
-        throw SplendorException("Nombre de tokens sélectionnés invalide");
+        throw SplendorException("Number of selected tokens invalid.");
     }
 
     bool checkCollinearity(const vector<tuple<size_t, size_t>> &choice) {
         if (choice.size() > 3)
-            throw SplendorException("Trop de tokens sélectionnés");
+            throw SplendorException("Too many selected tokens.");
         if (choice.size() != 3)
             return true;
         vector<size_t> coords;
@@ -792,25 +794,25 @@ namespace game {
             coords.push_back(x);
             coords.push_back(y);
         }
-        // formule trouvée ici : https://math.stackexchange.com/a/405981
+        // formula found here: https://math.stackexchange.com/a/405981
         return (coords[3] - coords[1]) * (coords[4] - coords[2]) == (coords[5] - coords[3]) * (coords[2] - coords[0]);
     }
 
     tuple<vector<CardJewels *>, size_t> Game::chooseCardJewels(const bool buying) {
         int choice;
         vector<int> validChoices;
-        cout << "Pyramide :\n";
+        cout << "Pyramid:\n";
         printPyramid();
         auto playerReserve = activePlayer->getReserve();
         auto nbReserve = playerReserve.size();
         if (nbReserve > 0) {
-            cout << "Reserve :\n";
+            cout << "Reserve:\n";
             printCardsLine(playerReserve, nbReserve, false);
         }
         int nbCardsPerLine = 3;
-        cout << "\nChoississez la card que vous voulez en entrant le nombre correspondant:\n";
+        cout << "\nChoose the card you want by entering its number:\n";
         vector<vector<CardJewels *>> cards = {cardsLvl3, cardsLvl2, cardsLvl1, playerReserve};
-        cout << "\nPyramide :";
+        cout << "\nPyramid:";
         for (int nbContainer = 0; nbContainer < cards.size() - 1; nbContainer++) {
             cout << "\n";
             for (int space = nbCardsPerLine; space < 5; space++)
@@ -831,7 +833,7 @@ namespace game {
             nbCardsPerLine++;
         }
         if (nbReserve > 0) {
-            cout << "\nReserve :\n";
+            cout << "\nReserve:\n";
             for (int i = 0; i < nbReserve; i++) {
                 if (canBuyJewel(playerReserve[i]) || !buying) {
                     int chosenCard = 40 + (i + 1);
@@ -843,10 +845,10 @@ namespace game {
             }
             cout << "\n";
         }
-        cout << "\nCardRoyals choisie (0 pour annuler):";
+        cout << "\nChosen Royal card (enter 0 to cancel):";
         cin >> choice;
         while (find(validChoices.cbegin(), validChoices.cend(), choice) == validChoices.cend() && choice != 0) {
-            cout << "\nChoix invalide, veuillez entrer un choice valide:";
+            cout << "\nInvalid choice, please enter a valid choice:";
             cin >> choice;
         }
         if (choice == 0)
@@ -857,16 +859,16 @@ namespace game {
     size_t Game::chooseCardRoyals() const {
         int choice;
         vector<int> validChoices;
-        cout << "\nVous avez accumulé assez de crowns pour récupérer une card Royale !\n";
+        cout << "\nYou have accumulated enough crowns to take a Royal card!\n";
         printRoyals(cardsRoyals);
-        cout << "\nChoississez la card que vous voulez en entrant le nombre correspondant :\n";
+        cout << "\nChoose your card:\n";
         for (int i = 0; i < cardsRoyals.size(); i++) {
             cout << "  " << i + 1;
             validChoices.push_back(i + 1);
         }
-        cout << "\nCardRoyals choisie:";
+        cout << "\nChosen Royal card:";
         while (find(validChoices.cbegin(), validChoices.cend(), choice) == validChoices.cend() && choice != 0) {
-            cout << "\nChoix invalide, veuillez entrer un choice valide:";
+            cout << "\nInvalid choice, please enter a valid choice:";
             cin >> choice;
         }
         return choice - 1;
@@ -943,7 +945,7 @@ namespace game {
             } else cardsLvl3[index] = nullptr;
         } else if (container == activePlayer->getReserve()) {
             activePlayer->removeFromReserve(container[index]);
-        } else throw SplendorException("Conteneur de cartes inconnu");
+        } else throw SplendorException("Invalid container.");
     }
 
     void Game::buyJewel(const vector<card::CardJewels *> &container, size_t index) {
@@ -969,7 +971,7 @@ namespace game {
 
     void Game::discardExcessTokensAI(size_t nb) {
         char answer;
-        vector<char> validChoices = {'B', 'W', 'V', 'N', 'R', 'P', 'G'};
+        vector<char> validChoices = {'B', 'W', 'G', 'N', 'R', 'P', 'A'};
         size_t i = 0;
         int c = -1;
         random_device dev;
@@ -984,7 +986,7 @@ namespace game {
                 case 'W':
                     c = 1;
                     break;
-                case 'V':
+                case 'G':
                     c = 2;
                     break;
                 case 'N':
@@ -996,7 +998,7 @@ namespace game {
                 case 'P':
                     c = 5;
                     break;
-                case 'G':
+                case 'A':
                     c = 6;
                     break;
                 default:
@@ -1015,12 +1017,12 @@ namespace game {
 
     void Game::discardExcessTokens(size_t nb) {
         char answer = ' ';
-        cout << "Vous possedez plus de 10 tokens. Vous devez en remettre dans le bag.\n";
+        cout << "You have more than 10 tokens. You need to put some back in the bag.\n";
         size_t i = 0;
         int colorID = -1;
         while (i < nb) {
-            cout << "Vous devez remettre encore " << nb - i <<
-                 "tokens dans le bag.\nMerci de saisir le token que vous souhaitez remettre par exemple : R pour 1 token red.\n";
+            cout << "You need to put " << nb - i <<
+                 "tokens in the bag.\nChoose the color of a token you want to put back: R for 1 red token.\n";
             cin >> answer;
             switch (answer) {
                 case 'B':
@@ -1029,7 +1031,7 @@ namespace game {
                 case 'W':
                     colorID = 1;
                     break;
-                case 'V':
+                case 'G':
                     colorID = 2;
                     break;
                 case 'N':
@@ -1041,7 +1043,7 @@ namespace game {
                 case 'P':
                     colorID = 5;
                     break;
-                case 'G':
+                case 'A':
                     colorID = 6;
                     break;
                 default:
@@ -1065,7 +1067,6 @@ namespace game {
 
     void Game::takePrivilege() {
         if (activePlayer->getNbPrivileges() < 3) {
-            // si le Player a déjà les 3 privileges, il n'en prend pas
             if (nbFreePrivileges != 0) {
                 activePlayer->privilegeAdd();
                 nbFreePrivileges--;
@@ -1096,7 +1097,6 @@ namespace game {
             takePrivilege();
         }
         if (container[index]->getAbility() == Ability::play_again) {
-            //a discuter mais peut etre changer de autourde la
             changePlayer();
         }
     }
@@ -1110,7 +1110,7 @@ namespace game {
         if (players[i].getTokens().empty()) {
             return;
         }
-        vector<char> validChoices = {'B', 'W', 'V', 'N', 'R', 'P'};
+        vector<char> validChoices = {'B', 'W', 'G', 'N', 'R', 'P'};
         random_device dev;
         mt19937 rng(dev());
         uniform_int_distribution<> dis(0, validChoices.size() - 1);
@@ -1123,7 +1123,7 @@ namespace game {
             case 'W':
                 chosenColor = Color::white;
                 break;
-            case 'V':
+            case 'G':
                 chosenColor = Color::green;
                 break;
             case 'N':
@@ -1136,7 +1136,7 @@ namespace game {
                 chosenColor = Color::pearl;
                 break;
             default:
-                throw SplendorException("Couleur impossible a choisir");
+                throw SplendorException("Invalid color.");
         }
         activePlayer->takeToken(chosenColor);
         players[i].giveToken(chosenColor);
@@ -1151,7 +1151,7 @@ namespace game {
         }
         if (players[i].getTokens().empty())
             return;
-        cout << "Choisir la color du token à prendre parmi ceux de l'adversaire : \n";
+        cout << "Choose the color of the token you want to steal to your opponent: \n";
         for (const auto [color, nbTokens]: players[i].getTokens()) {
             if (nbTokens != 0 && color != Color::gold) {
                 cout << color << ", ";
@@ -1167,7 +1167,7 @@ namespace game {
             case 'W':
                 chosenColor = Color::white;
                 break;
-            case 'V':
+            case 'G':
                 chosenColor = Color::green;
                 break;
             case 'N':
@@ -1180,7 +1180,7 @@ namespace game {
                 chosenColor = Color::pearl;
                 break;
             default:
-                throw SplendorException("Couleur impossible a choisir");
+                throw SplendorException("Invalid color.");
         }
         activePlayer->takeToken(chosenColor);
         players[i].giveToken(chosenColor);
@@ -1201,7 +1201,7 @@ namespace game {
                 int x;
                 int y;
                 if (!activePlayer->isAI()) {
-                    cout << "Vous devez choisir un token " << color << ".\n";
+                    cout << "You need to choose a " << color << " token.\n";
                     const tuple<size_t, size_t> choice = chooseTokens(false, true)[0];
                     tie(x, y) = choice;
                 } else {
@@ -1212,8 +1212,8 @@ namespace game {
                     correctlyChosen = true;
                     activePlayer->takeToken(color);
                     board.removeToken(*board.getTokens()[board.getPosition(x, y)]);
-                } else cout << "Choix invalide, reesayez.\n";
+                } else cout << "Invalid choice, try again.\n";
             }
-        else cout << "Il n'y a pas de tokens de la bonne color sur le board !\n";
+        else cout << "The are no tokens of this color on the board!\n";
     }
 }

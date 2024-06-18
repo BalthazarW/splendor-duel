@@ -114,11 +114,7 @@ namespace board {
 
         size_t getNbGoldTokens() const { return nbGoldTokens; }
 
-        void setNbGoldTokens(size_t i) { nbGoldTokens = i; }
-
         void removeToken(const token::Token &token);
-
-        void removeGoldToken();
 
         void displayBoard() const;
 

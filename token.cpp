@@ -26,7 +26,7 @@ namespace token {
             case Color::pearl:
                 return "P";
             case Color::gold:
-                return "O";
+                return "A";
             default:
                 throw SplendorException("Unknown color");
         }
@@ -42,19 +42,19 @@ namespace token {
         return f;
     }
 
-    void saveTokens(const map<Color, size_t> &compte, QXmlStreamWriter &writer) {
-        for (const auto [couleur, nb]: compte) {
-            writer.writeAttribute(toString(couleur), QString::number(nb));
+    void saveTokens(const map<Color, size_t> &tokens, QXmlStreamWriter &writer) {
+        for (const auto [color, nb]: tokens) {
+            writer.writeAttribute(toString(color), QString::number(nb));
         }
         writer.writeEndElement();
     }
 
     map<Color, size_t> loadTokens(const QXmlStreamReader &reader) {
-        map<Color, size_t> nouveauCompte;
-        for (const auto couleur: Colors) {
-            if (const auto nbJetons = reader.attributes().value(toString(couleur)).toInt(); nbJetons > 0)
-                nouveauCompte[couleur] = nbJetons;
+        map<Color, size_t> newTokens;
+        for (const auto color: Colors) {
+            if (const auto nbTokens = reader.attributes().value(toString(color)).toInt(); nbTokens > 0)
+                newTokens[color] = nbTokens;
         }
-        return nouveauCompte;
+        return newTokens;
     }
 }

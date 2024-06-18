@@ -56,13 +56,13 @@ public:
         initCrownPoints();
 
         windowBoughtCards = new QDialog(this);
-        windowBoughtCards->setWindowTitle("Cartes Achetées");
+        windowBoughtCards->setWindowTitle("Player's cards");
 
         auto *layoutVertical = new QVBoxLayout(windowBoughtCards);
         gridLayoutBoughtCards = new QGridLayout;
         layoutVertical->addLayout(gridLayoutBoughtCards);
         windowReservedCards = new QDialog(this);
-        windowReservedCards->setWindowTitle("Cartes Reservées");
+        windowReservedCards->setWindowTitle("Reserve");
         auto *layout = new QVBoxLayout(windowReservedCards);
         gridLayoutReservedCards = new QGridLayout;
         layout->addLayout(gridLayoutReservedCards);

@@ -49,13 +49,11 @@ namespace token {
         ~Token() = default;
 
         bool isGold() const { return color == Color::gold; }
-
-        bool isPearl() const { return color == Color::pearl; }
     };
 
     ostream &operator<<(ostream &f, Token t);
 
-    void saveTokens(const map<Color, size_t> &c, QXmlStreamWriter &w);
+    void saveTokens(const map<Color, size_t> &tokens, QXmlStreamWriter &w);
 
     map<Color, size_t> loadTokens(const QXmlStreamReader &r);
 }

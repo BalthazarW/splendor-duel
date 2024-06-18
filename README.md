@@ -8,7 +8,7 @@ It is possible to play the game in the console, by running the executable with t
 
 Otherwise, the game is played on a Qt GUI.
 
-## Details :
+## Details:
 
 This project has been coded in C++20, make sure to use a later version for compatibility purposes.
 

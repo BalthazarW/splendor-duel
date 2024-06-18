@@ -36,8 +36,8 @@ namespace card {
         filesystem::path filePath;
 
     public:
-        CardRoyals(const size_t prest, const Ability abil, const string &fp) : prestige(prest), ability(abil),
-                                                                               filePath(fp) {}
+        CardRoyals(const size_t prestige, const Ability ability, const string &fp) : prestige(prestige), ability(ability),
+                                                                                     filePath(fp) {}
 
         virtual ~CardRoyals() = default;
 

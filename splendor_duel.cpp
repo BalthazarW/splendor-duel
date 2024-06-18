@@ -26,7 +26,7 @@ QLabel *CardWidget::initUI(const filesystem::path &fileName) {
 }
 
 SplendorDuel::SplendorDuel(QWidget *parent) : QWidget(parent), countMandatoryActions(0) {
-    setWindowTitle("Splendor duel"); // TODO : handle quit before launching app
+    setWindowTitle("Splendor duel"); // TODO: handle quit before launching app
     int continueGame = 0;
     if (const filesystem::path memoryPath = game::getBasePath() / "save" / "game.xml";
             splendor_duel::memoryFileExists(memoryPath))
@@ -46,14 +46,14 @@ SplendorDuel::SplendorDuel(QWidget *parent) : QWidget(parent), countMandatoryAct
         int lvlPlayer1AI = 0;
         QString namePlayer1 = "Bot Alpha";
         if (player1AI == QMessageBox::Yes) {
-            lvlPlayer1AI = QInputDialog::getInt(nullptr, "Niveau d'IA", "Niveau de l'IA :\n1 (aleatoire)", 1, 1, 1, 1,
+            lvlPlayer1AI = QInputDialog::getInt(nullptr, "Niveau d'IA", "Niveau de l'IA:\n1 (aleatoire)", 1, 1, 1, 1,
                                                 &ok);
         } else {
             namePlayer1 = QInputDialog::getText(nullptr, "Saisir Player 1", "Entrer le nom du Player 1:",
                                                 QLineEdit::Normal, "", &ok);
 
             if (ok && !namePlayer1.isEmpty()) {
-                qDebug() << "Nom saisi : " << namePlayer1;
+                qDebug() << "Nom saisi: " << namePlayer1;
             } else {
                 qDebug() << "Saisie annulée";
             }
@@ -66,14 +66,14 @@ SplendorDuel::SplendorDuel(QWidget *parent) : QWidget(parent), countMandatoryAct
         int lvlPlayer2AI = 0;
         QString namePlayer2 = "Bot Beta";
         if (player2AI == QMessageBox::Yes) {
-            lvlPlayer2AI = QInputDialog::getInt(nullptr, "Niveau d'IA", "Niveau de l'IA :\n1 (aleatoire)", 1, 1, 1, 1,
+            lvlPlayer2AI = QInputDialog::getInt(nullptr, "Niveau d'IA", "Niveau de l'IA:\n1 (aleatoire)", 1, 1, 1, 1,
                                                 &ok);
         } else {
             namePlayer2 = QInputDialog::getText(nullptr, "Saisir Player 2", "Entrer le nom du Player 2:",
                                                 QLineEdit::Normal, "", &ok);
 
             if (ok && !namePlayer2.isEmpty()) {
-                qDebug() << "Nom saisi : " << namePlayer2;
+                qDebug() << "Nom saisi: " << namePlayer2;
             } else {
                 qDebug() << "Saisie annulée";
             }
@@ -171,7 +171,7 @@ void SplendorDuel::setupUI() {
         mainLayout->addWidget(buttonStartAI, 0, 1);
     }
 
-    string playerName = "Player :\n";
+    string playerName = "Player:\n";
     playerName.append(pGame->activePlayer->getName());
     auto labelName = new QLabel(QString::fromStdString(playerName));
 //    labelName->setFixedSize(120, 30);
@@ -242,7 +242,7 @@ void SplendorDuel::checkEndOfTurn() {
     while (pGame->activePlayer->getNbTokens() > 10) {
         string text = "Choisissez la color du token à reposer (";
         text.append(to_string(pGame->activePlayer->getNbTokens() - 10));
-        text.append(" restant(s)) : ");
+        text.append(" restant(s)): ");
         vector<QString> validChoices;
         for (const auto color: token::Colors) {
             text.append(toString(color));
@@ -280,7 +280,7 @@ void SplendorDuel::switchPlayers() {
                              QMessageBox::Ok);
     auto labelName = dynamic_cast<QLabel *>(mainLayout->itemAtPosition(0, 3)->widget());
     if (labelName) {
-        string playerName = "Player :\n";
+        string playerName = "Player:\n";
         playerName.append(pGame->activePlayer->getName());
         labelName->setText(QString::fromStdString(playerName));
     }
@@ -300,7 +300,7 @@ QGridLayout *SplendorDuel::createGridPlayerCards() {
     auto *gridLayout = new QGridLayout;
     labelPrestige = new QLabel("Point de Prestige total: 0");
     labelCrowns = new QLabel("Couronne: 0");
-    labelDiscount = new QLabel("Reduction : 0");
+    labelDiscount = new QLabel("Reduction: 0");
     gridLayout->addWidget(labelPrestige, 0, 0);
     gridLayout->addWidget(labelCrowns, 1, 0);
     gridLayout->addWidget(labelDiscount, 2, 0);
@@ -570,11 +570,11 @@ void SplendorDuel::updatePyramid() {
 
 void SplendorDuel::updatePlayerTokens() {
     QLabel *labelTokens;
-    if (labelsPlayers.contains("Jetons :")) {
-        labelTokens = labelsPlayers["Jetons :"];
+    if (labelsPlayers.contains("Jetons:")) {
+        labelTokens = labelsPlayers["Jetons:"];
     } else {
         labelTokens = new QLabel;
-        labelsPlayers.insert("Jetons :", labelTokens);
+        labelsPlayers.insert("Jetons:", labelTokens);
 
         auto *layoutBottom = dynamic_cast<QBoxLayout *>(mainLayout->itemAtPosition(2, 0));
         if (layoutBottom) {
@@ -585,21 +585,21 @@ void SplendorDuel::updatePlayerTokens() {
             mainLayout->addLayout(layoutBottom, 2, 0);
         }
     }
-    string stringTokens = "Jetons :\n";
-    for (const auto [couleur, nb]: (pGame->activePlayer->getTokens())) {
-        stringTokens.append(token::toString(couleur));
+    string stringTokens = "Jetons:\n";
+    for (const auto [color, nb]: (pGame->activePlayer->getTokens())) {
+        stringTokens.append(token::toString(color));
         stringTokens.append(": ");
         stringTokens.append(to_string(nb));
         stringTokens.append("  ");
     }
-    stringTokens.append("\nBonus :\n");
+    stringTokens.append("\nBonus:\n");
     for (const auto [color, nbDiscount]: (pGame->activePlayer->getBonus())) {
         stringTokens.append(token::toString(color));
         stringTokens.append(": ");
         stringTokens.append(to_string(nbDiscount));
         stringTokens.append("  ");
     }
-    stringTokens.append("\nTotem(s) Privilège(s) : ");
+    stringTokens.append("\nTotem(s) Privilège(s): ");
     auto nbPrivileges = pGame->activePlayer->getNbPrivileges();
     if (nbPrivileges > 0 && pGame->optionalActionsDone < 2)
         dynamic_cast<QPushButton *>(dynamic_cast<QGridLayout *>(mainLayout->itemAtPosition(0,
@@ -866,7 +866,7 @@ bool SplendorDuel::activateCardAbility(CardWidget *card) {
 }
 
 void SplendorDuel::chooseBonusColor(const vector<card::CardJewels *> &container, size_t index) {
-    string text = "Choisissez la color du bonus de votre card : ";
+    string text = "Choisissez la color du bonus de votre card: ";
     vector<QString> validChoices;
     for (const auto color: token::Colors) {
         if (color != token::Color::gold && color != token::Color::pearl) {
